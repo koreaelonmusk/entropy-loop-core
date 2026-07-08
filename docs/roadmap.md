@@ -26,12 +26,13 @@ directional, not a commitment. It contains no private commercial detail.
 - Improved `entropy-loop demo` and a new `entropy-loop doctor`.
 - `docs/reliability-model.md` and expanded docs.
 
-## v0.3.0 — Replay (directional)
+## v0.3.0 — Replay (current)
 
-Theme: *failures should not only be remembered — they should be replayed.* Turn
-generated regression cases into a runnable suite so a remembered failure can be
-re-checked, not just stored. Candidate public-safe primitives: a regression
-suite, a runner, a pass/fail report, and case load/export.
+Theme: *failures should not only be remembered — they should be replayed.*
+Generated regression cases become a runnable suite so a remembered failure can be
+re-checked, not just stored. Shipped: `RegressionSuite`, `RegressionRunner`,
+`RegressionRunResult`, `RegressionReport`, suite import/export and JSON
+save/load, and `entropy-loop replay-demo`.
 
 ## v0.4.0 — Memory policy (directional)
 

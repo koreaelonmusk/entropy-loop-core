@@ -84,6 +84,19 @@ attempts, success, failure count, a breakdown of failures by category, the final
 status, and how many regression cases were generated. It is a plain data object
 — **no dashboards, no charts, no telemetry, nothing phones home**.
 
+## 8. Replay
+
+Generating a regression case is only half the value; the other half is being
+able to **run it again**. A `RegressionSuite` groups cases, and `RegressionRunner`
+replays each one: it turns the case back into a task, runs the agent once,
+verifies, and records pass/fail in a `RegressionReport` (with a `success_rate`).
+
+This closes the loop: a past failure becomes a repeatable check you can run
+before the same agent bug ships again. Suites can be saved to and loaded from
+local JSON, so a corpus of past failures persists across runs. Replay is
+**deterministic regression checking** — no retries inside the runner, no network,
+no model training, and no correctness guarantee.
+
 ## What this is not
 
 - Not model training or self-improvement of weights.

@@ -59,6 +59,11 @@ Pydantic models shared across every component:
   `expected_rule`, `failure_reason`, `category`).
 - `EvaluationSummary` — a run rollup (`total_attempts`, `success`,
   `failure_count`, `categories`, `final_status`, `generated_regression_cases`).
+- `RegressionSuite` — a named collection of `RegressionCase`s.
+- `RegressionRunResult` — the outcome of replaying one case (`passed`, `output`,
+  `verification_result`, `error`).
+- `RegressionReport` — a replay rollup (`suite_name`, `total_cases`, `passed`,
+  `failed`, `results`, and a computed `success_rate`).
 - `Severity` / `Status` / `FailureCategory` — string literals, not enums, to keep
   the contract plain.
 
@@ -85,10 +90,19 @@ The compiler core. Maps a `FailureTrace` to a `Lesson` using fixed guidance
 keyed by the failure's `FailureCategory`. **Deterministic and side-effect free —
 no LLM, no network** — so the same failure always yields the same lesson.
 
-### `regression.py` — `generate_regression_case`, `export_regression_case(s)`
+### `regression.py` — `generate_regression_case`, export/import helpers
 
 Pure functions turning a `FailureTrace` into a `RegressionCase` with a stable,
-identifier-friendly name, and rendering cases as plain dictionaries.
+identifier-friendly name, and rendering cases, suites, and reports as plain
+dictionaries. Includes local-filesystem JSON `save_regression_suite` /
+`load_regression_suite` — no network, no database.
+
+### `replay.py` — `RegressionRunner`
+
+Replays regression cases. `run_case` turns a `RegressionCase` back into a task,
+runs the agent once (attempt 1, no lessons), verifies, and returns pass/fail;
+`run_suite` aggregates a `RegressionReport`. Deterministic, no retries, no
+network. Agent exceptions are caught and reported as failures.
 
 ### `evaluation.py` — `summarize`
 
@@ -106,7 +120,8 @@ up to `max_attempts`. Agent exceptions are caught and traced as `critical`,
 ### `cli.py` — `entropy-loop`
 
 A Typer CLI: `demo` narrates the whole pipeline (including category, fingerprint,
-and evaluation summary) end to end; `doctor` runs basic health checks.
+and evaluation summary) end to end; `replay-demo` generates a regression case and
+replays it as a suite; `doctor` runs basic health checks.
 
 ## Why the core stays intentionally small
 

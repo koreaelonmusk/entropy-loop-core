@@ -7,8 +7,9 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
-Turn bad agent outputs into structured failure traces, reusable lessons, safer
-retry context, evaluation summaries, and regression cases.
+Turn failed agent outputs into regression cases — replay them before the same
+agent bug ships again. Along the way you get structured failure traces, reusable
+lessons, safer retry context, and evaluation summaries.
 
 **Stop throwing failures away. Compile them.**
 
@@ -185,6 +186,32 @@ entropy-loop doctor
 See [examples/failure_compiler_demo.py](examples/failure_compiler_demo.py). To
 record a demo GIF, see [docs/demo.md](docs/demo.md).
 
+## Replay regressions
+
+v0.2.0 *generated* regression cases from failures. v0.3.0 can *replay* them as a
+suite — so a past failure becomes a repeatable check:
+
+```bash
+entropy-loop replay-demo
+```
+
+```text
+Entropy Loop Replay Demo
+1. Regression suite created: 'job-status-regressions'
+2. Cases: 1
+3. Replaying: regression_report_the_job_status_contains_required_terms
+4. Result: passed
+5. Report: total=1, passed=1, failed=0, success_rate=100.0%
+```
+
+`RegressionRunner` turns each `RegressionCase` back into a task, runs the agent
+once, verifies the output, and reports pass/fail — deterministic, no retries, no
+network. A worked example of guarding a JSON agent is in
+[examples/json_agent_guard.py](examples/json_agent_guard.py).
+
+This is **deterministic regression checking** — not model training, and not a
+correctness guarantee.
+
 ## Architecture
 
 ```
@@ -236,8 +263,10 @@ repeated failures through regression cases.
 
 ## Releases
 
+- **v0.3.0** — *replay*: `RegressionSuite`, `RegressionRunner`, reports, suite
+  import/export, and `entropy-loop replay-demo`. *(current)*
 - **v0.2.0** — failure classification, verification policy, fingerprints,
-  evaluation summary, and regression export. *(current)*
+  evaluation summary, and regression export.
 - **v0.1.0** — the first public Failure Compiler loop: verify, trace, learn,
   retry, regress.
 
@@ -245,8 +274,6 @@ See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Roadmap
 
-- **v0.3.0 (directional)** — *replay*: turn regression cases into a runnable
-  suite so a remembered failure can be re-checked, not just stored.
 - **v0.4.0 (directional)** — *memory policy*: what to remember, group, and forget.
 - **Later** — async, pluggable verifier registry, persistence adapters, richer
   evaluation reports, integrations.

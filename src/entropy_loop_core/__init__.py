@@ -29,8 +29,14 @@ from .memory import MemoryStore
 from .regression import (
     export_regression_case,
     export_regression_cases,
+    export_regression_report,
+    export_regression_suite,
     generate_regression_case,
+    import_regression_suite,
+    load_regression_suite,
+    save_regression_suite,
 )
+from .replay import RegressionRunner
 from .types import (
     AgentOutput,
     EvaluationSummary,
@@ -39,6 +45,9 @@ from .types import (
     Lesson,
     LoopResult,
     RegressionCase,
+    RegressionReport,
+    RegressionRunResult,
+    RegressionSuite,
     RetryContext,
     Severity,
     Status,
@@ -47,7 +56,7 @@ from .types import (
 )
 from .verification import Rule, VerificationPolicy, Verifier
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Agent",
@@ -61,6 +70,10 @@ __all__ = [
     "LoopResult",
     "MemoryStore",
     "RegressionCase",
+    "RegressionReport",
+    "RegressionRunResult",
+    "RegressionRunner",
+    "RegressionSuite",
     "RetryContext",
     "Rule",
     "Severity",
@@ -71,7 +84,12 @@ __all__ = [
     "Verifier",
     "export_regression_case",
     "export_regression_cases",
+    "export_regression_report",
+    "export_regression_suite",
     "generate_regression_case",
+    "import_regression_suite",
+    "load_regression_suite",
+    "save_regression_suite",
     "summarize",
     "__version__",
 ]

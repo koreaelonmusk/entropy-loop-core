@@ -23,3 +23,12 @@ def test_doctor_passes() -> None:
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code == 0
     assert "All checks passed." in result.stdout
+
+
+def test_replay_demo_runs_and_passes() -> None:
+    result = runner.invoke(app, ["replay-demo"])
+    assert result.exit_code == 0
+    assert "Entropy Loop Replay Demo" in result.stdout
+    assert "Regression suite created" in result.stdout
+    assert "Result: passed" in result.stdout
+    assert "success_rate=100.0%" in result.stdout

@@ -13,11 +13,13 @@ public-safe artifacts.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
-from .types import FailureTrace, RegressionCase
+from .types import FailureTrace, RegressionCase, RegressionReport, RegressionSuite
 
 
 def _slugify(text: str, max_len: int = 40) -> str:
@@ -73,3 +75,50 @@ def export_regression_cases(cases: Iterable[RegressionCase]) -> list[dict[str, A
         A list of dictionaries, one per case, in order.
     """
     return [export_regression_case(case) for case in cases]
+
+
+def export_regression_suite(suite: RegressionSuite) -> dict[str, Any]:
+    """Render a regression suite as a plain, JSON-compatible dictionary."""
+    return suite.model_dump()
+
+
+def import_regression_suite(data: dict[str, Any]) -> RegressionSuite:
+    """Build a regression suite from a plain dictionary.
+
+    Args:
+        data: A dictionary as produced by :func:`export_regression_suite`.
+
+    Returns:
+        The reconstructed :class:`RegressionSuite`.
+    """
+    return RegressionSuite.model_validate(data)
+
+
+def export_regression_report(report: RegressionReport) -> dict[str, Any]:
+    """Render a regression report as a plain, JSON-compatible dictionary."""
+    return report.model_dump()
+
+
+def save_regression_suite(suite: RegressionSuite, path: str | Path) -> None:
+    """Write a regression suite to a local JSON file.
+
+    Args:
+        suite: The suite to save.
+        path: Destination path on the local filesystem.
+    """
+    Path(path).write_text(
+        json.dumps(export_regression_suite(suite), indent=2), encoding="utf-8"
+    )
+
+
+def load_regression_suite(path: str | Path) -> RegressionSuite:
+    """Read a regression suite from a local JSON file.
+
+    Args:
+        path: Path to a JSON file produced by :func:`save_regression_suite`.
+
+    Returns:
+        The reconstructed :class:`RegressionSuite`.
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return import_regression_suite(data)
