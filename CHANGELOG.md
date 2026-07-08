@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-09
+
+Theme: **packaging readiness**. A stabilization release — no runtime behavior
+changes and no new features.
+
+### Added
+
+- `py.typed` marker for PEP 561 typing support (shipped in the wheel).
+- Packaging metadata: `Development Status :: 4 - Beta`, `Typing :: Typed`, and
+  `Issues` / `Changelog` project URLs.
+- `build` and `twine` as dev-only dependencies.
+- `docs/release-checklist.md` and `docs/stabilization-v0.3.1.md`.
+- A CI `package` job running `python -m build` and `twine check dist/*`.
+
+### Changed
+
+- README clarifies source install (a package-index install is planned after
+  stabilization; no PyPI install command or badge yet).
+
+### Safety
+
+- No runtime behavior changes, no network calls, no external AI API calls.
+- No private business logic, customer data, private prompts, or secrets.
+
 ## [0.3.0] - 2026-07-09
 
 Theme: **replay**. Where v0.2.0 *generated* regression cases, v0.3.0 *replays*
@@ -89,6 +113,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.3.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.1
 [0.3.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.0
 [0.2.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.2.0
 [0.1.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.1.0

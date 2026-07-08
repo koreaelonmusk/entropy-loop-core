@@ -56,7 +56,7 @@ from .types import (
 )
 from .verification import Rule, VerificationPolicy, Verifier
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "Agent",
