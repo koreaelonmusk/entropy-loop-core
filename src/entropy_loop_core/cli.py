@@ -11,7 +11,7 @@ import typer
 
 from .loop import EntropyLoop
 from .memory import MemoryStore
-from .types import AgentContext, AgentOutput, LoopStatus, Task
+from .types import AgentOutput, RetryContext, Task
 from .verification import Verifier
 
 app = typer.Typer(
@@ -27,49 +27,46 @@ def _root() -> None:
     # into the root command.
 
 
-def _flaky_agent(context: AgentContext) -> AgentOutput:
+def _demo_agent(task: Task, context: RetryContext) -> AgentOutput:
     """A fake agent that fails until it has learned from a lesson.
 
-    On the first attempt it has no lessons and returns empty content (which
-    fails the non-empty rule). Once the loop has compiled a lesson from that
-    failure and fed it back, the agent produces a real answer.
+    On the first attempt it has no lessons and omits the required term
+    ``"status"`` (failing verification). Once the loop has compiled a lesson
+    from that failure and fed it back, the agent includes the term and passes.
     """
     if not context.lessons:
-        return AgentOutput(content="")
-    return AgentOutput(content=f"Draft summary for: {context.task.instruction}")
+        return AgentOutput(content="Processing complete.")
+    return AgentOutput(content="status: ok - processing complete.")
 
 
 @app.command()
 def demo() -> None:
     """Run a task that fails once, is compiled into a lesson, then succeeds."""
     memory = MemoryStore()
-    loop = EntropyLoop(verifier=Verifier(), memory=memory, max_attempts=3)
-    task = Task(id="demo-001", instruction="summarize the release notes")
+    verifier = Verifier().require_non_empty().require_terms(["status"])
+    loop = EntropyLoop(verifier=verifier, memory=memory, max_attempts=3)
+    task = Task(id="demo-001", instruction="report the job status")
 
-    typer.echo(f"▶ Task [{task.id}]: {task.instruction!r}")
-    result = loop.run(task, _flaky_agent)
+    typer.echo("Entropy Loop Demo")
+    typer.echo("1. Running task...")
 
-    for trace in result.failures:
-        vr = trace.verification_result
+    result = loop.run(task, _demo_agent)
+
+    for failure in result.failures:
         typer.echo(
-            f"  ✗ attempt {trace.attempt} failed "
-            f"[{vr.rule_name}/{vr.severity.value}]: {vr.reason}"
+            f"2. Attempt {failure.attempt} failed: {failure.verification_result.reason}"
         )
+        typer.echo("3. Failure trace stored")
+        typer.echo("4. Lesson generated")
+        typer.echo("5. Retrying with lesson context")
 
-    for lesson in result.lessons:
-        typer.echo(f"  ⚙ compiled lesson: {lesson.summary}")
-        typer.echo(f"      patch: {lesson.recommended_prompt_patch}")
-
-    for case in result.regression_cases:
-        typer.echo(f"  🧪 regression case: {case.name} (expects {case.expected_rule})")
-
-    typer.echo("")
-    typer.echo(f"Status:   {result.status.value}")
-    typer.echo(f"Attempts: {result.attempts}")
-    content = result.output.content if result.output else None
-    typer.echo(f"Output:   {content!r}")
-
-    if result.status is not LoopStatus.SUCCESS:
+    if result.status == "success":
+        typer.echo(f"6. Attempt {result.attempts} passed")
+        typer.echo("7. Loop completed successfully")
+        content = result.output.content if result.output else ""
+        typer.echo(f"   Output: {content!r}")
+    else:
+        typer.echo(f"6. Gave up after {result.attempts} attempts")
         raise typer.Exit(code=1)
 
 

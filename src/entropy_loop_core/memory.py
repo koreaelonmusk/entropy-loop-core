@@ -1,9 +1,11 @@
 """In-memory storage for failure traces and lessons.
 
 :class:`MemoryStore` is the simplest possible persistence layer: it keeps
-records in process memory. It gives the compiler somewhere to remember what
-went wrong and what was learned, and a way to surface lessons relevant to a new
-task. Higher layers can later swap it for a durable backend.
+records in process memory. It gives the compiler somewhere to remember what went
+wrong and what was learned, and a way to surface lessons relevant to a new task.
+
+It is intentionally in-memory only — **no database, no vector store, no
+embeddings, no network calls**. Higher layers can wrap it with durable storage.
 """
 
 from __future__ import annotations
@@ -73,13 +75,17 @@ class MemoryStore:
             raise ValueError("limit must be non-negative")
         return self._failures[-limit:] if limit else []
 
+    def all_lessons(self) -> list[Lesson]:
+        """Return every stored lesson in insertion order."""
+        return list(self._lessons)
+
     def relevant_lessons(self, task: Task, limit: int = 5) -> list[Lesson]:
         """Return lessons most relevant to ``task``.
 
-        Relevance is a deterministic keyword overlap between the task
-        (its instruction and metadata values) and each lesson (its summary and
-        tags). When no lesson overlaps, the most recent lessons are returned so
-        the loop always has some context to retry with.
+        Relevance is a deterministic keyword overlap between the task (its
+        instruction) and each lesson (its summary and tags). When no lesson
+        overlaps, the most recent lessons are returned so a retry always has
+        some context to work with.
 
         Args:
             task: The task to find lessons for.
@@ -94,9 +100,6 @@ class MemoryStore:
             return []
 
         query = _tokenize(task.instruction)
-        for value in task.metadata.values():
-            query |= _tokenize(value)
-
         matched: list[Lesson] = []
         for lesson in self._lessons:
             haystack = _tokenize(lesson.summary) | {tag.lower() for tag in lesson.tags}
@@ -105,14 +108,6 @@ class MemoryStore:
 
         pool = matched if matched else self._lessons
         return pool[-limit:]
-
-    def failures(self) -> list[FailureTrace]:
-        """Return all stored failure traces in insertion order."""
-        return list(self._failures)
-
-    def lessons(self) -> list[Lesson]:
-        """Return all stored lessons in insertion order."""
-        return list(self._lessons)
 
     def clear(self) -> None:
         """Remove all stored failures and lessons."""

@@ -15,7 +15,7 @@ def _trace(
     rule_name: str, reason: str, instruction: str = "do the thing"
 ) -> FailureTrace:
     return FailureTrace(
-        task=Task(instruction=instruction),
+        task=Task(id="t", instruction=instruction),
         output=AgentOutput(content=""),
         verification_result=VerificationResult(
             passed=False, reason=reason, rule_name=rule_name
@@ -34,11 +34,13 @@ def test_lesson_summary_includes_instruction_and_rule() -> None:
 
 
 def test_lesson_carries_rule_specific_guidance_and_tags() -> None:
-    lesson = LessonGenerator().generate(_trace("non_empty_output", "output is empty"))
+    lesson = LessonGenerator().generate(
+        _trace("contains_required_terms", "missing required terms: ['status']")
+    )
     assert lesson.avoid_next_time
     assert lesson.recommended_prompt_patch
-    assert "empty-output" in lesson.tags
-    assert "non_empty_output" in lesson.tags
+    assert "missing-terms" in lesson.tags
+    assert "contains_required_terms" in lesson.tags
 
 
 def test_generation_is_deterministic() -> None:

@@ -6,32 +6,28 @@ lessons, retries, and regression cases.
 > Entropy Loop Core is an open-source Failure Compiler for AI agents. It turns
 > bad outputs into failure traces, lessons, retries, and regression cases.
 
-## What problem this solves
+## Core thesis
 
-AI agents are probabilistic: the same task can succeed once and fail the next
-time. Most stacks bolt on ad-hoc retries and scattered validation, log the mess,
-and forget everything the moment a run ends. Nothing gets smarter.
+> AI agents become more reliable when failures are **captured**, **compressed
+> into lessons**, and **reused** in future attempts.
 
-In production, the cost is not in the successes — it is in the failures:
+This project is the smallest sharp primitive that proves that thesis — not a
+large agent framework.
 
-- malformed tool calls,
-- broken JSON,
-- hallucinated answers,
-- the same mistake repeated,
-- retries that spiral into cost,
-- logs that pile up while no learning happens.
+## Why this exists
 
-The gap is clear: **AI agents still have no black box and no mistake notebook.**
-Entropy Loop Core is that layer.
+Most agent stacks showcase the happy path and bolt on ad-hoc retries. In
+production the cost is in the *failures*: malformed tool calls, broken JSON,
+hallucinated answers, the same mistake repeated, retries that spiral into cost,
+and logs that pile up while nothing gets smarter. AI agents still have no black
+box and no mistake notebook. Entropy Loop Core is that layer.
 
-## Why failure-first reliability matters
+## What problem it solves
 
-A retry library does `Agent → Output → Retry`.
-
-A Failure Compiler does:
+A retry library does `Agent → Output → Retry`. A Failure Compiler does:
 
 ```
-Agent → Output → Verify → Failure Trace → Lesson → Memory → Better Retry → Regression Test
+Task → AgentOutput → VerificationResult → FailureTrace → Lesson → RetryContext → LoopResult → RegressionCase
 ```
 
 Every failure is *compiled* into reusable assets:
@@ -41,21 +37,10 @@ Every failure is *compiled* into reusable assets:
 3. **store** each failure as a structured trace,
 4. **compile** traces into reusable lessons,
 5. **retry** with those lessons in context,
-6. **regress** — optionally emit a case so the same failure never returns.
+6. **regress** — generate a case so the same failure can be checked later.
 
 The compiler itself is **deterministic and does no I/O — no LLM, no network** —
 so your reliability layer is itself reliable, testable, and vendor-neutral.
-
-## Features
-
-- **Structured failures** — `FailureTrace` captures task, output, verdict, and attempt.
-- **Verification** — composable `Verifier` rules (non-empty, required terms, JSON, length).
-- **Failure compilation** — `LessonGenerator` turns traces into reusable lessons, deterministically.
-- **Memory with recall** — `MemoryStore` remembers failures and surfaces relevant lessons.
-- **Regression cases** — `RegressionGenerator` pins failures so they can be checked forever.
-- **The loop** — `EntropyLoop` runs, verifies, traces, learns, and retries.
-- **Typed contracts** — Pydantic models at every boundary.
-- **Tiny CLI** — `entropy-loop demo` shows the whole pipeline end to end.
 
 ## Installation
 
@@ -67,53 +52,54 @@ pip install -e ".[dev]"
 
 ## Quickstart
 
+```python
+from entropy_loop_core import (
+    AgentOutput,
+    EntropyLoop,
+    MemoryStore,
+    RetryContext,
+    Task,
+    Verifier,
+    generate_regression_case,
+)
+
+
+def learning_agent(task: Task, ctx: RetryContext) -> AgentOutput:
+    # No lessons yet -> omit the required term and fail. After the loop compiles
+    # a lesson and feeds it back, adapt and succeed.
+    if not ctx.lessons:
+        return AgentOutput(content="Job finished.")
+    return AgentOutput(content="status: done - job finished.")
+
+
+memory = MemoryStore()
+verifier = Verifier().require_non_empty().require_terms(["status"])
+loop = EntropyLoop(verifier=verifier, memory=memory, max_attempts=3)
+
+result = loop.run(Task(id="t1", instruction="report the job status"), learning_agent)
+
+print(result.status)                      # success
+print(result.attempts)                    # 2
+print(result.output.content)              # status: done - job finished.
+print(result.lessons[0].summary)          # the compiled lesson
+print(generate_regression_case(result.failures[0]).name)  # a regression case
+```
+
+## CLI demo
+
 ```bash
 entropy-loop demo
 ```
 
 ```text
-▶ Task [demo-001]: 'summarize the release notes'
-  ✗ attempt 1 failed [non_empty_output/error]: output is empty
-  ⚙ compiled lesson: On task 'summarize the release notes', attempt 1 failed ...
-      patch: Always produce a concrete, non-empty answer before returning.
-  🧪 regression case: regression_summarize_the_release_notes_non_empty_output ...
-
-Status:   success
-Attempts: 2
-Output:   'Draft summary for: summarize the release notes'
-```
-
-## Example
-
-```python
-from entropy_loop_core import (
-    AgentContext,
-    AgentOutput,
-    EntropyLoop,
-    MemoryStore,
-    Task,
-    Verifier,
-)
-
-
-def learning_agent(ctx: AgentContext) -> AgentOutput:
-    # No lessons yet -> empty output, which fails verification.
-    # After the loop compiles a lesson and feeds it back, adapt and succeed.
-    if not ctx.lessons:
-        return AgentOutput(content="")
-    return AgentOutput(content=f"Answer for: {ctx.task.instruction}")
-
-
-memory = MemoryStore()
-loop = EntropyLoop(verifier=Verifier(), memory=memory, max_attempts=3)
-
-result = loop.run(Task(instruction="explain entropy loops"), learning_agent)
-
-print(result.status.value)              # success
-print(result.attempts)                  # 2
-print(result.output.content)            # Answer for: explain entropy loops
-print(result.lessons[0].summary)        # the compiled lesson
-print(result.regression_cases[0].name)  # the generated regression case
+Entropy Loop Demo
+1. Running task...
+2. Attempt 1 failed: missing required terms: ['status']
+3. Failure trace stored
+4. Lesson generated
+5. Retrying with lesson context
+6. Attempt 2 passed
+7. Loop completed successfully
 ```
 
 See [examples/failure_compiler_demo.py](examples/failure_compiler_demo.py).
@@ -127,49 +113,50 @@ Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResu
                                     ▼
                               FailureTrace ──▶ MemoryStore
                                     │
-                    ┌───────────────┼────────────────┐
-                    ▼               ▼                 ▼
-             LessonGenerator   RegressionGen     retry with
-              → Lesson          → RegressionCase  lessons in context
+                    ┌───────────────┴───────────────┐
+                    ▼                                ▼
+             LessonGenerator                  retry with a
+              → Lesson                         RetryContext
 ```
 
 - **`EntropyLoop`** orchestrates verify → trace → learn → retry.
 - **`Verifier`** applies ordered rules and reports the first violation.
 - **`LessonGenerator`** compiles failure traces into reusable lessons.
-- **`RegressionGenerator`** turns failures into test-like regression cases.
 - **`MemoryStore`** remembers failures and recalls relevant lessons.
+- **`generate_regression_case`** turns a failure into a test-like case.
 
-Details in [docs/architecture.md](docs/architecture.md) and the reasoning in
-[docs/philosophy.md](docs/philosophy.md).
+Details in [docs/architecture.md](docs/architecture.md); the reasoning in
+[docs/research/failure-compiler-theory.md](docs/research/failure-compiler-theory.md).
 
-## What is open source
+## Public / private boundary
 
-This repository is the **open-source core** — the reliability primitives every
-agent needs, small enough to read every line:
+> **Entropy Loop Core open-sources the primitive, not the private advantage.**
 
-- typed data contract,
-- rule-based verification,
-- deterministic lesson compilation,
-- failure memory and lesson recall,
-- regression-case generation,
-- the retry-with-memory loop, and a CLI.
+This repository contains only generic reliability primitives. It deliberately
+excludes business logic, proprietary prompts, customer data, private benchmarks,
+cloud sync, auth, billing, dashboards, and any external network or AI API calls.
+Commercial products may build private policies, datasets, dashboards, and
+deployment workflows on top of this core. See
+[docs/public-private-boundary.md](docs/public-private-boundary.md).
 
-## What is intentionally not included
+## Design principles
 
-To keep the core clean and trustworthy, this project deliberately excludes:
+- **Failure-first.** The structured failure path is the product.
+- **Deterministic core.** Lessons and regressions are reproducible and testable.
+- **Karpathy-style simplicity.** Obvious names, small files, explicit control flow.
+- **Ponytail principle.** One sharp primitive before many blurry features.
+- **Typed boundaries.** Pydantic models at every hand-off.
+- **No hidden state, no network.** Memory is passed in; nothing phones home.
 
-- proprietary or business-specific logic,
-- LLM prompts, model calls, or any network I/O,
-- customer data or credentials,
-- paid dashboards, cloud sync, or enterprise features.
-
-The core stays deterministic, dependency-light, and vendor-neutral.
+This does not perform model training or guarantee correctness; it captures
+failures, generates reusable lessons, improves retry context, and helps prevent
+repeated failures through regression cases.
 
 ## Roadmap
 
 - **v0.1.0** — Failure Compiler foundations: verify, trace, learn, retry, regress. *(current)*
-- **v0.2.0** — sharper compilation from repeated failures; prompt-patch helpers.
-- **v0.3.0** — regression as a first-class workflow; pluggable persistence.
+- **Future (not now)** — async, pluggable verifier registry, persistence
+  adapters, evaluation reports, integrations, advanced policies.
 
 Full plan in [docs/roadmap.md](docs/roadmap.md).
 
@@ -191,6 +178,7 @@ Released under the [Apache-2.0](LICENSE) license.
 ## Maintainer note
 
 Entropy Loop Core is maintained as an open-source project and intentionally kept
-small, readable, and deterministic. It contains no proprietary logic — just the
-primitives that turn agent failures into assets. Issues and pull requests are
-welcome.
+small, readable, and deterministic. It is the public seed of a larger AI
+ecosystem: the open core is the primitive; the private advantage — operational
+data, advanced policies, product loops, and enterprise UX — is built separately.
+Issues and pull requests are welcome.

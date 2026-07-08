@@ -1,42 +1,40 @@
 # Roadmap
 
 Entropy Loop Core aims to stay small and dependable while sharpening one idea:
-compiling agent failures into reusable assets. The roadmap below is directional,
-not a commitment, and welcomes community input.
+compiling agent failures into reusable assets. This roadmap is conservative and
+directional, not a commitment. It contains no private commercial detail.
 
 ## v0.1.0 — Failure Compiler foundations (current)
 
 - Typed data contract: `Task`, `AgentOutput`, `VerificationResult`,
-  `FailureTrace`, `Lesson`, `RegressionCase`, `AgentContext`, `LoopResult`.
-- Rule-based `Verifier` with `non_empty_output`, `contains_required_terms`,
-  `valid_json_when_expected`, and `max_length`.
+  `FailureTrace`, `Lesson`, `RetryContext`, `LoopResult`, `RegressionCase`.
+- In-memory `MemoryStore` with failure history and relevant-lesson recall.
+- Deterministic, fluent `Verifier` (`require_non_empty`, `require_terms`,
+  `expect_json`, `max_length`).
 - Deterministic `LessonGenerator` (no LLM, no network).
-- `RegressionGenerator` for test-like cases from failures.
-- `MemoryStore` with failure history and relevant-lesson recall.
+- `generate_regression_case` for test-like cases from failures.
 - `EntropyLoop` orchestrating verify → trace → learn → retry.
-- `entropy-loop demo` CLI, worked example, tests, and docs.
+- `entropy-loop demo` CLI, a worked example, tests, and docs.
 
-## v0.2.0 — Sharper compilation
+## Future (not now)
 
-- Richer lesson synthesis from *repeated* failures, not just single traces.
-- Prompt-patch application helpers so lessons fold into agent input directly.
-- Configurable backoff between attempts.
+Deferred until a real, public use case justifies the added surface:
 
-## v0.3.0 — Regression as a first-class workflow
-
-- Export `RegressionCase`s to runnable `pytest` suites.
-- Replay a stored regression corpus against an agent.
-- Pluggable persistence for traces and lessons (file, SQLite).
-
-## Later
-
-- Structured tracing/metrics hooks for observability.
-- Larger built-in rule library (JSON schema, regex, numeric bounds).
-- Adapters for popular agent frameworks.
+- async support,
+- a custom verifier registry / pluggable rules,
+- persistence adapters (file, then others),
+- evaluation reports,
+- framework integrations,
+- advanced memory and reliability policies.
 
 ## Non-goals
 
 - Proprietary or vendor-specific agent logic.
 - LLM or network calls inside the core.
-- Heavyweight orchestration or workflow engines.
-- Anything that compromises the small, readable, deterministic core.
+- Databases, vector stores, or embeddings in the core.
+- Heavyweight orchestration, web servers, or UI frameworks.
+- Private commercial roadmap details of any kind.
+
+Commercial products may build private policies, datasets, dashboards, and
+deployment workflows on top of this open-source core — those live elsewhere, not
+in this repository.

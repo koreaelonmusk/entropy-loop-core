@@ -2,10 +2,23 @@
 
 Entropy Loop Core is a **Failure Compiler** for AI agents. Instead of blindly
 retrying, it treats every failure as structured input and *compiles* it into
-reusable artifacts: lessons that improve the next attempt and regression cases
-that prevent the mistake from returning.
+reusable artifacts: lessons that improve the next attempt and, on demand,
+regression cases that pin the mistake so it can be checked later.
 
-## The pipeline
+## The core loop
+
+Understandable in one glance:
+
+```txt
+Task
+  → AgentOutput
+  → VerificationResult
+  → FailureTrace
+  → Lesson
+  → RetryContext
+  → LoopResult
+  → RegressionCase
+```
 
 ```
 Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResult(success)
@@ -14,15 +27,18 @@ Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResu
                                     ▼
                               FailureTrace ──▶ MemoryStore
                                     │
-                    ┌───────────────┼────────────────┐
-                    ▼               ▼                 ▼
-             LessonGenerator   RegressionGen     (retry with
-              → Lesson          → RegressionCase   lessons in context)
+                    ┌───────────────┴───────────────┐
+                    ▼                                ▼
+             LessonGenerator                  retry with a
+              → Lesson  ──▶ MemoryStore ──▶   RetryContext (prior
+                                              failures + lessons)
+
+  generate_regression_case(trace) ──▶ RegressionCase   (on demand)
 ```
 
 Failure is not a dead end — it is the fuel for the next, better attempt.
 
-## Data contract (`types.py`)
+## Object model (`types.py`)
 
 Pydantic models shared across every component:
 
@@ -33,51 +49,54 @@ Pydantic models shared across every component:
   `attempt`, `timestamp`).
 - `Lesson` — a compiled learning artifact (`summary`, `avoid_next_time`,
   `recommended_prompt_patch`, `tags`).
+- `RetryContext` — what a retry receives (`attempt`, `prior_failures`, `lessons`).
+- `LoopResult` — the outcome (`status`, `attempts`, `output`, `failures`,
+  `lessons`, `errors`).
 - `RegressionCase` — a test-like artifact (`name`, `instruction`,
   `expected_rule`, `failure_reason`).
-- `AgentContext` — what the agent receives each attempt (`task`, `attempt`,
-  `lessons`).
-- `LoopResult` — the structured outcome (`status`, `attempts`, `output`,
-  `failures`, `lessons`, `regression_cases`).
-- `LoopStatus` / `Severity` — enums.
+- `Severity` / `Status` — string literals, not enums, to keep the contract plain.
 
-## Components
+## Module responsibilities
 
-### Verifier (`verification.py`)
+### `verification.py` — `Verifier`
 
-Applies an ordered list of rules to an `AgentOutput` and returns the first
-`VerificationResult` that fails. A rule is any `Callable[[Task, AgentOutput],
-VerificationResult]`. Built-in rule builders: `non_empty_output`,
-`contains_required_terms`, `valid_json_when_expected`, and `max_length`.
+A fluent builder of simple, deterministic rules applied in order to an
+`AgentOutput`. `require_non_empty`, `require_terms`, `expect_json`, `max_length`.
+`verify(output)` returns the first failing `VerificationResult`. No I/O.
 
-### MemoryStore (`memory.py`)
+### `memory.py` — `MemoryStore`
 
-In-memory accumulator for failure traces and lessons. Beyond simple recording it
-offers `recent_failures` and `relevant_lessons(task)` — a deterministic keyword
-overlap search so retries are fed the lessons that matter for the current task.
+In-memory accumulator for failures and lessons: `add_failure`, `add_lesson`,
+`recent_failures`, `all_lessons`, and `relevant_lessons(task)` — a deterministic
+keyword-overlap recall so retries get the lessons that matter. No database, no
+vector store, no embeddings.
 
-### LessonGenerator (`lessons.py`)
+### `lessons.py` — `LessonGenerator`
 
-The compiler core. It maps a `FailureTrace` to a `Lesson` using fixed, per-rule
-guidance. It is **deterministic and does no I/O — no LLM, no network** — so the
+The compiler core. Maps a `FailureTrace` to a `Lesson` using fixed, per-rule
+guidance. **Deterministic and side-effect free — no LLM, no network** — so the
 same failure always yields the same lesson.
 
-### RegressionGenerator (`regression.py`)
+### `regression.py` — `generate_regression_case`
 
-Turns a `FailureTrace` into a `RegressionCase` with a stable, identifier-friendly
-name, recording the rule that must pass for the failure to count as fixed.
+A pure function turning a `FailureTrace` into a `RegressionCase` with a stable,
+identifier-friendly name.
 
-### EntropyLoop (`loop.py`)
+### `loop.py` — `EntropyLoop`
 
-The orchestrator. Each attempt: build an `AgentContext` (with relevant lessons),
-run the agent, verify. On success it returns; on failure it traces, compiles a
-lesson, generates a regression case, remembers everything, and retries — up to
-`max_attempts`. Agent exceptions are caught and traced as `CRITICAL` failures.
+The orchestrator. Each attempt: build a `RetryContext`, run the agent
+(`(task, context) -> AgentOutput | str`), verify. On success it returns; on
+failure it traces, compiles a lesson, remembers both, and retries — up to
+`max_attempts`. Agent exceptions are caught and traced as `critical` failures.
 
-## Design principles
+### `cli.py` — `entropy-loop`
 
-- **Failure-first.** The structured failure path is the product, not an afterthought.
-- **Deterministic core.** Lessons and regressions are reproducible and testable.
-- **Callables over inheritance.** Agents and rules are plain functions.
-- **Typed boundaries.** Pydantic models keep every hand-off explicit.
-- **No hidden state, no network.** Memory is passed in; nothing phones home.
+A Typer CLI whose `demo` command narrates the whole pipeline end to end.
+
+## Why v0.1.0 is intentionally small
+
+This release proves one thesis — *failures captured, compressed into lessons,
+and reused make agents more reliable* — with the smallest sharp primitive. It
+has **no** async, plugin system, tool execution, nested agents, persistence,
+vector search, or network. Those are deliberately deferred (see
+[roadmap.md](roadmap.md)) so the central path stays beautiful and readable.

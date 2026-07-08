@@ -1,80 +1,60 @@
-"""Tests for the rule-based verifier."""
+"""Tests for the fluent, rule-based verifier."""
 
 from __future__ import annotations
 
-from entropy_loop_core import (
-    AgentOutput,
-    Severity,
-    Task,
-    Verifier,
-    contains_required_terms,
-    max_length,
-    non_empty_output,
-    valid_json_when_expected,
-)
+from entropy_loop_core import AgentOutput, Verifier
 
 
 def _out(content: str) -> AgentOutput:
     return AgentOutput(content=content)
 
 
-TASK = Task(instruction="do the thing")
-
-
-def test_default_verifier_rejects_empty_output() -> None:
-    result = Verifier().verify(TASK, _out(""))
+def test_require_non_empty_rejects_blank() -> None:
+    result = Verifier().require_non_empty().verify(_out("   "))
     assert not result.passed
-    assert result.reason == "output is empty"
     assert result.rule_name == "non_empty_output"
+    assert result.reason == "output is empty"
 
 
-def test_default_verifier_rejects_whitespace_only() -> None:
-    assert not Verifier().verify(TASK, _out("  \n\t")).passed
-
-
-def test_default_verifier_accepts_non_empty() -> None:
-    result = Verifier().verify(TASK, _out("hello"))
+def test_require_non_empty_accepts_content() -> None:
+    result = Verifier().require_non_empty().verify(_out("hello"))
     assert result.passed
-    assert result.reason is None
     assert result.rule_name == "all"
 
 
-def test_contains_required_terms_reports_missing() -> None:
-    verifier = Verifier(rules=[contains_required_terms(["alpha", "beta"])])
-    assert verifier.verify(TASK, _out("alpha and beta")).passed
-    result = verifier.verify(TASK, _out("only alpha"))
+def test_require_terms_reports_missing() -> None:
+    verifier = Verifier().require_terms(["status"])
+    assert verifier.verify(_out("status: ok")).passed
+    result = verifier.verify(_out("done"))
     assert not result.passed
-    assert "beta" in result.reason
+    assert "status" in result.reason
 
 
-def test_valid_json_only_enforced_when_expected() -> None:
-    rule = valid_json_when_expected()
-    plain = Verifier(rules=[rule])
-    # Not expecting JSON -> any content passes.
-    assert plain.verify(Task(instruction="x"), _out("not json")).passed
-
-    json_task = Task(instruction="x", metadata={"expected_format": "json"})
-    assert plain.verify(json_task, _out('{"ok": true}')).passed
-    assert not plain.verify(json_task, _out("not json")).passed
+def test_expect_json() -> None:
+    verifier = Verifier().expect_json()
+    assert verifier.verify(_out('{"ok": true}')).passed
+    assert not verifier.verify(_out("not json")).passed
 
 
-def test_max_length_rule_and_severity() -> None:
-    verifier = Verifier(rules=[max_length(5)])
-    assert verifier.verify(TASK, _out("short")).passed
-    result = verifier.verify(TASK, _out("way too long"))
+def test_max_length_is_a_warning() -> None:
+    verifier = Verifier().max_length(5)
+    assert verifier.verify(_out("short")).passed
+    result = verifier.verify(_out("far too long"))
     assert not result.passed
-    assert result.severity is Severity.WARNING
+    assert result.severity == "warning"
 
 
-def test_custom_severity_is_reported() -> None:
-    verifier = Verifier(rules=[non_empty_output(severity=Severity.CRITICAL)])
-    result = verifier.verify(TASK, _out(""))
-    assert result.severity is Severity.CRITICAL
-
-
-def test_first_failing_rule_short_circuits() -> None:
-    verifier = Verifier()
-    verifier.add_rule(contains_required_terms(["needle"]))
-    # Empty output fails the non-empty rule before the contains rule runs.
-    result = verifier.verify(TASK, _out(""))
+def test_first_failing_rule_wins() -> None:
+    # Non-empty is added first, so an empty output fails on it, not on terms.
+    verifier = Verifier().require_non_empty().require_terms(["status"])
+    result = verifier.verify(_out(""))
     assert result.rule_name == "non_empty_output"
+
+
+def test_empty_verifier_passes_everything() -> None:
+    assert Verifier().verify(_out("")).passed
+
+
+def test_fluent_chaining_returns_verifier() -> None:
+    verifier = Verifier().require_non_empty().require_terms(["x"]).max_length(100)
+    assert isinstance(verifier, Verifier)

@@ -4,40 +4,42 @@ Run it with::
 
     python examples/failure_compiler_demo.py
 
-It defines an agent that returns empty output on its first attempt. The loop
-verifies the output, traces the failure, compiles a lesson, generates a
-regression case, and retries with the lesson in context — at which point the
-agent adapts and succeeds. The script prints every compiled artifact.
+It defines an agent that omits a required term on its first attempt. The loop
+verifies the output, traces the failure, compiles a lesson, and retries with the
+lesson in context — at which point the agent adapts and succeeds. The script
+then generates a regression case from the failure.
 """
 
 from __future__ import annotations
 
 from entropy_loop_core import (
-    AgentContext,
     AgentOutput,
     EntropyLoop,
     MemoryStore,
+    RetryContext,
     Task,
     Verifier,
+    generate_regression_case,
 )
 
 
-def learning_agent(context: AgentContext) -> AgentOutput:
-    """Return empty (failing) output until a lesson has been fed back."""
+def learning_agent(task: Task, context: RetryContext) -> AgentOutput:
+    """Omit the required term until a lesson has been fed back, then include it."""
     if not context.lessons:
-        return AgentOutput(content="")
-    return AgentOutput(content=f"Answer for: {context.task.instruction}")
+        return AgentOutput(content="Job finished.")  # missing the term "status"
+    return AgentOutput(content="status: done - job finished.")
 
 
 def main() -> None:
     """Run one task through the compiler and print the compiled artifacts."""
     memory = MemoryStore()
-    loop = EntropyLoop(verifier=Verifier(), memory=memory, max_attempts=3)
+    verifier = Verifier().require_non_empty().require_terms(["status"])
+    loop = EntropyLoop(verifier=verifier, memory=memory, max_attempts=3)
 
-    task = Task(id="demo-001", instruction="explain entropy loops")
+    task = Task(id="demo-001", instruction="report the job status")
     result = loop.run(task, learning_agent)
 
-    print(f"status:   {result.status.value}")
+    print(f"status:   {result.status}")
     print(f"attempts: {result.attempts}")
     output = result.output.content if result.output else None
     print(f"output:   {output!r}")
@@ -50,11 +52,11 @@ def main() -> None:
     print("\ncompiled lessons:")
     for lesson in result.lessons:
         print(f"  - {lesson.summary}")
-        print(f"      avoid: {lesson.avoid_next_time}")
         print(f"      patch: {lesson.recommended_prompt_patch}")
 
-    print("\nregression cases:")
-    for case in result.regression_cases:
+    print("\nregression cases (generated from failures):")
+    for trace in result.failures:
+        case = generate_regression_case(trace)
         print(f"  - {case.name} (must pass: {case.expected_rule})")
 
 

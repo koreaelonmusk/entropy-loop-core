@@ -8,12 +8,13 @@ not happen twice.
 The public API is intentionally small:
 
 - Data contract — :class:`Task`, :class:`AgentOutput`, :class:`VerificationResult`,
-  :class:`FailureTrace`, :class:`Lesson`, :class:`RegressionCase`,
-  :class:`AgentContext`, :class:`LoopResult`, :class:`LoopStatus`, :class:`Severity`.
+  :class:`FailureTrace`, :class:`Lesson`, :class:`RetryContext`,
+  :class:`LoopResult`, :class:`RegressionCase`, and the ``Severity``/``Status``
+  literals.
 - :class:`MemoryStore` — in-memory failure/lesson storage with lesson recall.
-- :class:`Verifier` and rule builders — rule-based output validation.
+- :class:`Verifier` — fluent, rule-based output validation.
 - :class:`LessonGenerator` — deterministic failure-to-lesson compilation.
-- :class:`RegressionGenerator` — failure-to-regression-case generation.
+- :func:`generate_regression_case` — failure-to-regression-case generation.
 - :class:`EntropyLoop` — run, verify, trace, learn, retry.
 """
 
@@ -22,51 +23,40 @@ from __future__ import annotations
 from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
 from .memory import MemoryStore
-from .regression import RegressionGenerator
+from .regression import generate_regression_case
 from .types import (
-    AgentContext,
     AgentOutput,
     FailureTrace,
     Lesson,
     LoopResult,
-    LoopStatus,
     RegressionCase,
+    RetryContext,
     Severity,
+    Status,
     Task,
     VerificationResult,
 )
-from .verification import (
-    Rule,
-    Verifier,
-    contains_required_terms,
-    max_length,
-    non_empty_output,
-    valid_json_when_expected,
-)
+from .verification import Rule, Verifier
 
 __version__ = "0.1.0"
 
 __all__ = [
     "Agent",
-    "AgentContext",
     "AgentOutput",
     "EntropyLoop",
     "FailureTrace",
     "Lesson",
     "LessonGenerator",
     "LoopResult",
-    "LoopStatus",
     "MemoryStore",
     "RegressionCase",
-    "RegressionGenerator",
+    "RetryContext",
     "Rule",
     "Severity",
+    "Status",
     "Task",
     "VerificationResult",
     "Verifier",
-    "contains_required_terms",
-    "max_length",
-    "non_empty_output",
-    "valid_json_when_expected",
+    "generate_regression_case",
     "__version__",
 ]
