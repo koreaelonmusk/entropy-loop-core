@@ -10,6 +10,8 @@ cases and replay them before the same bug ships again.
 
 [Get started](#get-started) · [Example](#example) · [CLI](#cli) · [Architecture](#architecture) · [Releases](#releases) · [Contributing](#contributing)
 
+> Star the repo if you want to follow the Failure Compiler roadmap.
+
 ![Entropy Loop Core replay demo](./docs/assets/demo.gif)
 
 ## Get started
