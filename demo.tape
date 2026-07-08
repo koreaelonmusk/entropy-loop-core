@@ -4,7 +4,7 @@
 #   brew install vhs      # or: go install github.com/charmbracelet/vhs@latest
 #   vhs demo.tape         # produces demo.gif
 #
-# No GIF is committed to this repo; run the command above to generate one.
+# No GIF is committed to source; run the command above to (re)generate one.
 
 Output demo.gif
 
@@ -14,7 +14,16 @@ Set Width 1100
 Set Height 720
 Set Padding 24
 Set Theme "Dracula"
-Set TypingSpeed 60ms
+Set TypingSpeed 55ms
+
+# Put the CLI on PATH without showing the setup in the recording. Works from the
+# repo root after `pip install -e ".[dev]"`; falls back to whatever is on PATH.
+Hide
+Type "source .venv/bin/activate 2>/dev/null || true"
+Enter
+Type "clear"
+Enter
+Show
 
 Type "entropy-loop demo"
 Sleep 500ms

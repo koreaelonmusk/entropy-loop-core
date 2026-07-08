@@ -1,7 +1,7 @@
 # Recording the demo
 
-There is **no GIF committed to this repository**. This page explains how to
-record one from the real CLI so the README can show the loop in motion.
+A recorded GIF lives at [`docs/assets/demo.gif`](assets/demo.gif) and is shown in
+the README. This page explains how to (re)generate it from the real CLI.
 
 ## What the demo shows
 

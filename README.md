@@ -17,6 +17,10 @@ pip install -e ".[dev]"
 entropy-loop demo
 ```
 
+## Demo
+
+![Entropy Loop Core demo](./docs/assets/demo.gif)
+
 ## The loop
 
 ```text
