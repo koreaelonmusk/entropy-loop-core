@@ -135,6 +135,7 @@ class EntropyLoop:
                 reason=f"agent raised {type(exc).__name__}: {exc}",
                 rule_name="agent_exception",
                 severity="critical",
+                category="agent_exception",
             )
             trace = FailureTrace(
                 task=task,

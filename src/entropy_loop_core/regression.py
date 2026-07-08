@@ -1,19 +1,21 @@
-"""Generating regression cases from failures.
+"""Generating and exporting regression cases from failures.
 
 :func:`generate_regression_case` turns a
 :class:`~entropy_loop_core.types.FailureTrace` into a
 :class:`~entropy_loop_core.types.RegressionCase`: a small, test-like artifact
 that pins down a task which once failed and the rule that must pass for it to be
-considered fixed. This closes the loop — a failure is not just remembered, it
-becomes something you can check later.
+considered fixed. :func:`export_regression_case` / :func:`export_regression_cases`
+render cases as plain dictionaries for serialization.
 
-The function is deterministic and side-effect free, and produces only generic,
+All functions are deterministic and side-effect free, and produce only generic,
 public-safe artifacts.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
+from typing import Any
 
 from .types import FailureTrace, RegressionCase
 
@@ -35,13 +37,39 @@ def generate_regression_case(trace: FailureTrace) -> RegressionCase:
 
     Returns:
         A :class:`RegressionCase` capturing the task, the rule that must pass,
-        and the original failure reason.
+        the original failure reason, and the failure category.
     """
-    rule_name = trace.verification_result.rule_name or "unknown"
+    result = trace.verification_result
+    rule_name = result.rule_name or "unknown"
     name = f"regression_{_slugify(trace.task.instruction)}_{rule_name}"
     return RegressionCase(
         name=name,
         instruction=trace.task.instruction,
         expected_rule=rule_name,
-        failure_reason=trace.verification_result.reason or "verification failed",
+        failure_reason=result.reason or "verification failed",
+        category=result.category,
     )
+
+
+def export_regression_case(case: RegressionCase) -> dict[str, Any]:
+    """Render a regression case as a plain, serializable dictionary.
+
+    Args:
+        case: The regression case to export.
+
+    Returns:
+        A dictionary of the case's fields.
+    """
+    return case.model_dump()
+
+
+def export_regression_cases(cases: Iterable[RegressionCase]) -> list[dict[str, Any]]:
+    """Render a collection of regression cases as plain dictionaries.
+
+    Args:
+        cases: The regression cases to export.
+
+    Returns:
+        A list of dictionaries, one per case, in order.
+    """
+    return [export_regression_case(case) for case in cases]

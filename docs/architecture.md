@@ -14,10 +14,12 @@ Task
   → AgentOutput
   → VerificationResult
   → FailureTrace
+  → FailureCategory
   → Lesson
   → RetryContext
   → LoopResult
   → RegressionCase
+  → EvaluationSummary
 ```
 
 ```
@@ -44,25 +46,31 @@ Pydantic models shared across every component:
 
 - `Task` — the work item (`id`, `instruction`, `metadata`).
 - `AgentOutput` — raw agent output (`content`, `metadata`).
-- `VerificationResult` — the verdict (`passed`, `reason`, `rule_name`, `severity`).
+- `VerificationResult` — the verdict (`passed`, `reason`, `rule_name`, `severity`,
+  `category`, `details`).
 - `FailureTrace` — a structured failure (`task`, `output`, `verification_result`,
-  `attempt`, `timestamp`).
+  `attempt`, `timestamp`) plus derived `category` and `fingerprint`.
 - `Lesson` — a compiled learning artifact (`summary`, `avoid_next_time`,
   `recommended_prompt_patch`, `tags`).
 - `RetryContext` — what a retry receives (`attempt`, `prior_failures`, `lessons`).
 - `LoopResult` — the outcome (`status`, `attempts`, `output`, `failures`,
   `lessons`, `errors`).
 - `RegressionCase` — a test-like artifact (`name`, `instruction`,
-  `expected_rule`, `failure_reason`).
-- `Severity` / `Status` — string literals, not enums, to keep the contract plain.
+  `expected_rule`, `failure_reason`, `category`).
+- `EvaluationSummary` — a run rollup (`total_attempts`, `success`,
+  `failure_count`, `categories`, `final_status`, `generated_regression_cases`).
+- `Severity` / `Status` / `FailureCategory` — string literals, not enums, to keep
+  the contract plain.
 
 ## Module responsibilities
 
-### `verification.py` — `Verifier`
+### `verification.py` — `Verifier`, `VerificationPolicy`
 
 A fluent builder of simple, deterministic rules applied in order to an
 `AgentOutput`. `require_non_empty`, `require_terms`, `expect_json`, `max_length`.
-`verify(output)` returns the first failing `VerificationResult`. No I/O.
+`verify(output)` returns the first failing `VerificationResult`, classified with
+a `FailureCategory` and structured `details`. `VerificationPolicy` +
+`Verifier.from_policy(...)` configure the same rules declaratively. No I/O.
 
 ### `memory.py` — `MemoryStore`
 
@@ -73,30 +81,37 @@ vector store, no embeddings.
 
 ### `lessons.py` — `LessonGenerator`
 
-The compiler core. Maps a `FailureTrace` to a `Lesson` using fixed, per-rule
-guidance. **Deterministic and side-effect free — no LLM, no network** — so the
-same failure always yields the same lesson.
+The compiler core. Maps a `FailureTrace` to a `Lesson` using fixed guidance
+keyed by the failure's `FailureCategory`. **Deterministic and side-effect free —
+no LLM, no network** — so the same failure always yields the same lesson.
 
-### `regression.py` — `generate_regression_case`
+### `regression.py` — `generate_regression_case`, `export_regression_case(s)`
 
-A pure function turning a `FailureTrace` into a `RegressionCase` with a stable,
-identifier-friendly name.
+Pure functions turning a `FailureTrace` into a `RegressionCase` with a stable,
+identifier-friendly name, and rendering cases as plain dictionaries.
+
+### `evaluation.py` — `summarize`
+
+A pure function that rolls a `LoopResult` (and any generated regression cases)
+up into an `EvaluationSummary`. No dashboards, no telemetry.
 
 ### `loop.py` — `EntropyLoop`
 
 The orchestrator. Each attempt: build a `RetryContext`, run the agent
 (`(task, context) -> AgentOutput | str`), verify. On success it returns; on
-failure it traces, compiles a lesson, remembers both, and retries — up to
-`max_attempts`. Agent exceptions are caught and traced as `critical` failures.
+failure it classifies, traces, compiles a lesson, remembers both, and retries —
+up to `max_attempts`. Agent exceptions are caught and traced as `critical`,
+`agent_exception` failures.
 
 ### `cli.py` — `entropy-loop`
 
-A Typer CLI whose `demo` command narrates the whole pipeline end to end.
+A Typer CLI: `demo` narrates the whole pipeline (including category, fingerprint,
+and evaluation summary) end to end; `doctor` runs basic health checks.
 
-## Why v0.1.0 is intentionally small
+## Why the core stays intentionally small
 
-This release proves one thesis — *failures captured, compressed into lessons,
-and reused make agents more reliable* — with the smallest sharp primitive. It
-has **no** async, plugin system, tool execution, nested agents, persistence,
-vector search, or network. Those are deliberately deferred (see
+This project proves one thesis — *failures captured, classified, compressed into
+lessons, and reused make agents more reliable* — with the smallest sharp
+primitive. It has **no** async, plugin system, tool execution, nested agents,
+persistence, vector search, or network. Those are deliberately deferred (see
 [roadmap.md](roadmap.md)) so the central path stays beautiful and readable.

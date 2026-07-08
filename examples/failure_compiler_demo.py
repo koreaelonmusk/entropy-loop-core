@@ -1,13 +1,14 @@
-"""A runnable end-to-end example of the Failure Compiler.
+"""A runnable end-to-end example of the Failure Compiler (v0.2.0).
 
 Run it with::
 
     python examples/failure_compiler_demo.py
 
-It defines an agent that omits a required term on its first attempt. The loop
-verifies the output, traces the failure, compiles a lesson, and retries with the
-lesson in context — at which point the agent adapts and succeeds. The script
-then generates a regression case from the failure.
+It configures a verifier from a policy, defines an agent that omits a required
+term on its first attempt, and runs the loop. The loop verifies the output,
+classifies and traces the failure, compiles a lesson, and retries with the
+lesson in context. The script then generates regression cases and prints an
+evaluation summary of the run.
 """
 
 from __future__ import annotations
@@ -18,8 +19,11 @@ from entropy_loop_core import (
     MemoryStore,
     RetryContext,
     Task,
+    VerificationPolicy,
     Verifier,
+    export_regression_cases,
     generate_regression_case,
+    summarize,
 )
 
 
@@ -33,8 +37,10 @@ def learning_agent(task: Task, context: RetryContext) -> AgentOutput:
 def main() -> None:
     """Run one task through the compiler and print the compiled artifacts."""
     memory = MemoryStore()
-    verifier = Verifier().require_non_empty().require_terms(["status"])
-    loop = EntropyLoop(verifier=verifier, memory=memory, max_attempts=3)
+    policy = VerificationPolicy(require_non_empty=True, required_terms=["status"])
+    loop = EntropyLoop(
+        verifier=Verifier.from_policy(policy), memory=memory, max_attempts=3
+    )
 
     task = Task(id="demo-001", instruction="report the job status")
     result = loop.run(task, learning_agent)
@@ -46,18 +52,22 @@ def main() -> None:
 
     print("\nfailure traces:")
     for trace in result.failures:
-        vr = trace.verification_result
-        print(f"  - attempt {trace.attempt} [{vr.rule_name}]: {vr.reason}")
+        print(f"  - attempt {trace.attempt} [{trace.category}] fp={trace.fingerprint}")
+        print(f"      reason: {trace.verification_result.reason}")
 
     print("\ncompiled lessons:")
     for lesson in result.lessons:
         print(f"  - {lesson.summary}")
         print(f"      patch: {lesson.recommended_prompt_patch}")
 
-    print("\nregression cases (generated from failures):")
-    for trace in result.failures:
-        case = generate_regression_case(trace)
-        print(f"  - {case.name} (must pass: {case.expected_rule})")
+    cases = [generate_regression_case(trace) for trace in result.failures]
+    print("\nregression cases (exported):")
+    for exported in export_regression_cases(cases):
+        print(f"  - {exported}")
+
+    summary = summarize(result, cases)
+    print("\nevaluation summary:")
+    print(f"  {summary.model_dump()}")
 
 
 if __name__ == "__main__":

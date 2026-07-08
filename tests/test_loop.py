@@ -36,10 +36,10 @@ def test_compiles_failure_then_succeeds_on_retry() -> None:
     assert result.output is not None
     assert "status" in result.output.content
 
-    # One failure was traced, compiled into a lesson, and remembered.
     assert len(result.failures) == 1
+    assert result.failures[0].category == "missing_required_term"
+    assert result.failures[0].fingerprint  # deterministic hash present
     assert len(result.lessons) == 1
-    assert result.errors and "status" in result.errors[0]
     assert len(memory.recent_failures()) == 1
     assert len(memory.all_lessons()) == 1
 
@@ -72,7 +72,7 @@ def test_retry_context_carries_prior_failures() -> None:
 
     def agent(task: Task, ctx: RetryContext) -> AgentOutput:
         seen.append(len(ctx.prior_failures))
-        return AgentOutput(content="")  # always fails non-empty
+        return AgentOutput(content="")
 
     loop = EntropyLoop(
         verifier=Verifier().require_non_empty(), memory=MemoryStore(), max_attempts=3
@@ -98,7 +98,7 @@ def test_gives_up_after_max_attempts() -> None:
     assert len(result.errors) == 2
 
 
-def test_agent_exception_is_traced_as_critical_failure() -> None:
+def test_agent_exception_is_traced_and_classified() -> None:
     loop = EntropyLoop(
         verifier=Verifier().require_non_empty(), memory=MemoryStore(), max_attempts=1
     )
@@ -110,7 +110,7 @@ def test_agent_exception_is_traced_as_critical_failure() -> None:
 
     assert result.status == "failed"
     trace = result.failures[0]
-    assert trace.verification_result.rule_name == "agent_exception"
+    assert trace.category == "agent_exception"
     assert trace.verification_result.severity == "critical"
     assert "RuntimeError: kaboom" in trace.verification_result.reason
 

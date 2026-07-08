@@ -1,9 +1,10 @@
 """Typed data contract for Entropy Loop Core.
 
 These Pydantic models are the shared vocabulary of the *Failure Compiler*: a
-task flows in, an agent produces output, a verifier judges it, and any failure
-is captured as a structured :class:`FailureTrace` that can be compiled into a
-reusable :class:`Lesson` and, on demand, a :class:`RegressionCase`.
+task flows in, an agent produces output, a verifier judges it and classifies any
+failure, and that failure is captured as a structured :class:`FailureTrace` that
+can be fingerprinted, compiled into a reusable :class:`Lesson`, turned into a
+:class:`RegressionCase`, and rolled up into an :class:`EvaluationSummary`.
 
 The models are intentionally small and dependency-light so they can be reused by
 callers building their own reliability tooling.
@@ -11,16 +12,28 @@ callers building their own reliability tooling.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 # Severity of a verification failure, from advisory to blocking.
 Severity = Literal["info", "warning", "error", "critical"]
 
 # Final status of an entropy-loop run.
 Status = Literal["success", "failed"]
+
+# A small, deliberately non-exhaustive set of public-safe failure categories.
+# This is a starting taxonomy, not a universal one.
+FailureCategory = Literal[
+    "empty_output",
+    "missing_required_term",
+    "invalid_json",
+    "too_long",
+    "agent_exception",
+    "unknown",
+]
 
 
 class Task(BaseModel):
@@ -58,11 +71,16 @@ class AgentOutput(BaseModel):
 class VerificationResult(BaseModel):
     """The verdict of checking a single agent output against a rule.
 
+    Beyond pass/fail, a result explains *what kind* of failure happened via
+    ``category`` and carries structured, public-safe context in ``details``.
+
     Attributes:
         passed: ``True`` when the checked output satisfied the rule(s).
         reason: Explanation of the outcome; empty when ``passed`` is ``True``.
         rule_name: Name of the rule that produced this result.
         severity: How serious the failure is; ignored when ``passed`` is True.
+        category: The kind of failure; ``"unknown"`` when passed.
+        details: Structured, non-sensitive context about the failure.
     """
 
     passed: bool = Field(..., description="Whether verification passed.")
@@ -71,13 +89,21 @@ class VerificationResult(BaseModel):
         default="", description="Name of the rule that produced this result."
     )
     severity: Severity = Field(default="error", description="Severity of the failure.")
+    category: FailureCategory = Field(
+        default="unknown", description="The kind of failure that occurred."
+    )
+    details: dict[str, Any] = Field(
+        default_factory=dict, description="Structured, non-sensitive failure context."
+    )
 
 
 class FailureTrace(BaseModel):
     """A structured memory of one failed agent attempt.
 
-    A ``FailureTrace`` is the atom the compiler works on: it bundles everything
-    needed to explain, remember, and regression-test a failure.
+    A ``FailureTrace`` is the atom the compiler works on. Its ``category`` and
+    ``fingerprint`` are derived deterministically so similar failures can be
+    grouped without storing anything sensitive — the fingerprint is a hash, not
+    raw content.
 
     Attributes:
         task: The task that failed.
@@ -97,6 +123,33 @@ class FailureTrace(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="When the failure was recorded (UTC).",
     )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def category(self) -> FailureCategory:
+        """The failure category, taken from the verification result."""
+        return self.verification_result.category
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def fingerprint(self) -> str:
+        """A deterministic, public-safe hash grouping similar failures.
+
+        Derived from a hash of the task instruction plus the rule name,
+        category, and reason. It contains no raw private content.
+        """
+        instruction_hash = hashlib.sha256(
+            self.task.instruction.encode("utf-8")
+        ).hexdigest()[:16]
+        basis = "|".join(
+            [
+                instruction_hash,
+                self.verification_result.rule_name,
+                self.verification_result.category,
+                self.verification_result.reason,
+            ]
+        )
+        return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
 
 
 class Lesson(BaseModel):
@@ -180,9 +233,37 @@ class RegressionCase(BaseModel):
         instruction: The task instruction that triggered the failure.
         expected_rule: The verification rule that must now pass.
         failure_reason: The original failure message.
+        category: The failure category the case guards against.
     """
 
     name: str = Field(..., description="Identifier-friendly name for the case.")
     instruction: str = Field(..., description="Instruction that triggered failure.")
     expected_rule: str = Field(..., description="Rule that must now pass.")
     failure_reason: str = Field(..., description="The original failure message.")
+    category: FailureCategory = Field(
+        default="unknown", description="Failure category the case guards against."
+    )
+
+
+class EvaluationSummary(BaseModel):
+    """A compact, public-safe summary of a single loop run.
+
+    Attributes:
+        total_attempts: How many attempts the loop made.
+        success: Whether the loop ultimately succeeded.
+        failure_count: How many failures were captured.
+        categories: Count of failures by category.
+        final_status: The loop's final status.
+        generated_regression_cases: How many regression cases were generated.
+    """
+
+    total_attempts: int = Field(..., ge=0, description="Attempts the loop made.")
+    success: bool = Field(..., description="Whether the loop succeeded.")
+    failure_count: int = Field(..., ge=0, description="Failures captured.")
+    categories: dict[str, int] = Field(
+        default_factory=dict, description="Count of failures by category."
+    )
+    final_status: Status = Field(..., description="The loop's final status.")
+    generated_regression_cases: int = Field(
+        default=0, ge=0, description="Regression cases generated from failures."
+    )

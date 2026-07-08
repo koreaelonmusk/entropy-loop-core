@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "entropy-loop-core"
-version = "0.1.0"
-description = "A Failure Compiler for AI agents: turn bad outputs into failure traces, lessons, retries, and regression cases."
+version = "0.2.0"
+description = "A Failure Compiler for AI agents: classify failures into lessons, retries, regression cases, and evaluation summaries."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }

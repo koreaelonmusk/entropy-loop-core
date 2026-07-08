@@ -27,20 +27,39 @@ box and no mistake notebook. Entropy Loop Core is that layer.
 A retry library does `Agent → Output → Retry`. A Failure Compiler does:
 
 ```
-Task → AgentOutput → VerificationResult → FailureTrace → Lesson → RetryContext → LoopResult → RegressionCase
+Task → AgentOutput → VerificationResult → FailureTrace → FailureCategory
+     → Lesson → RetryContext → LoopResult → RegressionCase → EvaluationSummary
 ```
 
 Every failure is *compiled* into reusable assets:
 
 1. **detect** bad outputs with explicit rules,
-2. **explain** why they failed (a named rule and a severity),
-3. **store** each failure as a structured trace,
+2. **classify** each failure by category (empty output, missing term, invalid
+   JSON, too long, agent exception, …),
+3. **store** each failure as a structured, fingerprinted trace,
 4. **compile** traces into reusable lessons,
 5. **retry** with those lessons in context,
-6. **regress** — generate a case so the same failure can be checked later.
+6. **regress** — generate a case so the same failure can be checked later,
+7. **summarize** the run into an evaluation summary.
 
 The compiler itself is **deterministic and does no I/O — no LLM, no network** —
-so your reliability layer is itself reliable, testable, and vendor-neutral.
+so your reliability layer is itself reliable, testable, and vendor-neutral. It
+**captures, classifies, and summarizes** failures; it does **not** train models
+or guarantee correctness.
+
+## What's new in v0.2.0
+
+- **Failure categories** — every `VerificationResult` carries a
+  `FailureCategory` and structured `details`.
+- **Verification policy** — configure rules declaratively with
+  `VerificationPolicy` and `Verifier.from_policy(...)`.
+- **Failure fingerprints** — a deterministic, public-safe hash on every trace so
+  similar failures group without storing raw content.
+- **Evaluation summary** — `summarize(result, cases)` rolls a run up into an
+  `EvaluationSummary`.
+- **Regression export** — `export_regression_case(s)` renders cases as plain dicts.
+- **Sharper CLI** — `entropy-loop demo` shows category, fingerprint, and summary;
+  new `entropy-loop doctor` health check.
 
 ## Installation
 
@@ -59,8 +78,10 @@ from entropy_loop_core import (
     MemoryStore,
     RetryContext,
     Task,
+    VerificationPolicy,
     Verifier,
     generate_regression_case,
+    summarize,
 )
 
 
@@ -73,16 +94,20 @@ def learning_agent(task: Task, ctx: RetryContext) -> AgentOutput:
 
 
 memory = MemoryStore()
-verifier = Verifier().require_non_empty().require_terms(["status"])
-loop = EntropyLoop(verifier=verifier, memory=memory, max_attempts=3)
+policy = VerificationPolicy(require_non_empty=True, required_terms=["status"])
+loop = EntropyLoop(verifier=Verifier.from_policy(policy), memory=memory, max_attempts=3)
 
 result = loop.run(Task(id="t1", instruction="report the job status"), learning_agent)
 
 print(result.status)                      # success
 print(result.attempts)                    # 2
 print(result.output.content)              # status: done - job finished.
+print(result.failures[0].category)        # missing_required_term
+print(result.failures[0].fingerprint)     # deterministic public-safe hash
 print(result.lessons[0].summary)          # the compiled lesson
-print(generate_regression_case(result.failures[0]).name)  # a regression case
+
+cases = [generate_regression_case(t) for t in result.failures]
+print(summarize(result, cases).model_dump())  # evaluation summary
 ```
 
 ## CLI demo
@@ -93,13 +118,21 @@ entropy-loop demo
 
 ```text
 Entropy Loop Demo
-1. Running task...
+1. Task started: 'report the job status'
 2. Attempt 1 failed: missing required terms: ['status']
-3. Failure trace stored
-4. Lesson generated
-5. Retrying with lesson context
-6. Attempt 2 passed
-7. Loop completed successfully
+3. Failure category: missing_required_term
+4. Failure fingerprint: fd46a1fcda19a179
+5. Lesson generated
+6. Retry context updated
+7. Attempt 2 passed
+8. Evaluation summary: status=success, attempts=2, failures=1, categories={'missing_required_term': 1}
+9. Regression case generated: regression_report_the_job_status_contains_required_terms
+```
+
+A health check is also available:
+
+```bash
+entropy-loop doctor
 ```
 
 See [examples/failure_compiler_demo.py](examples/failure_compiler_demo.py).
@@ -154,11 +187,15 @@ repeated failures through regression cases.
 
 ## Roadmap
 
-- **v0.1.0** — Failure Compiler foundations: verify, trace, learn, retry, regress. *(current)*
+- **v0.1.0** — Failure Compiler foundations: verify, trace, learn, retry, regress.
+- **v0.2.0** — failure classification, verification policy, fingerprints,
+  evaluation summary, regression export. *(current)*
 - **Future (not now)** — async, pluggable verifier registry, persistence
-  adapters, evaluation reports, integrations, advanced policies.
+  adapters, richer evaluation reports, integrations, advanced policies.
 
-Full plan in [docs/roadmap.md](docs/roadmap.md).
+The reliability model is documented in
+[docs/reliability-model.md](docs/reliability-model.md); full plan in
+[docs/roadmap.md](docs/roadmap.md).
 
 ## Development
 
