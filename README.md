@@ -3,6 +3,7 @@
 **A Failure Compiler for AI agents.** Turn failed agent outputs into regression
 cases and replay them before the same bug ships again.
 
+[![PyPI](https://img.shields.io/pypi/v/entropy-loop-core.svg)](https://pypi.org/project/entropy-loop-core/)
 [![CI](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml/badge.svg)](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
@@ -16,16 +17,20 @@ cases and replay them before the same bug ships again.
 
 ## Get started
 
-Install from source (a package-index install is planned after stabilization):
+```bash
+pip install entropy-loop-core
+entropy-loop replay-demo
+```
+
+Works on Windows, macOS, and Linux with Python 3.10+.
+
+### Development install (from source)
 
 ```bash
 git clone https://github.com/koreaelonmusk/entropy-loop-core.git
 cd entropy-loop-core
 python -m pip install -e ".[dev]"
-entropy-loop replay-demo
 ```
-
-Works on Windows, macOS, and Linux with Python 3.10+.
 
 ## Why
 
