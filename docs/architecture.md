@@ -1,57 +1,83 @@
 # Architecture
 
-Entropy Loop Core is a small, composable reliability layer for AI agents. It has
-four moving parts and a set of shared typed objects.
+Entropy Loop Core is a **Failure Compiler** for AI agents. Instead of blindly
+retrying, it treats every failure as structured input and *compiles* it into
+reusable artifacts: lessons that improve the next attempt and regression cases
+that prevent the mistake from returning.
 
-## Overview
+## The pipeline
 
 ```
-        ┌─────────────┐
-Task ──▶ │ EntropyLoop │ ──▶ LoopResult
-        └──────┬──────┘
-               │ uses
-     ┌─────────┼──────────┐
-     ▼         ▼          ▼
- Verifier  MemoryStore   Agent
- (rules)   (failures/    (your callable)
-            lessons)
+Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResult(success)
+                                    │
+                                   fail
+                                    ▼
+                              FailureTrace ──▶ MemoryStore
+                                    │
+                    ┌───────────────┼────────────────┐
+                    ▼               ▼                 ▼
+             LessonGenerator   RegressionGen     (retry with
+              → Lesson          → RegressionCase   lessons in context)
 ```
+
+Failure is not a dead end — it is the fuel for the next, better attempt.
+
+## Data contract (`types.py`)
+
+Pydantic models shared across every component:
+
+- `Task` — the work item (`id`, `instruction`, `metadata`).
+- `AgentOutput` — raw agent output (`content`, `metadata`).
+- `VerificationResult` — the verdict (`passed`, `reason`, `rule_name`, `severity`).
+- `FailureTrace` — a structured failure (`task`, `output`, `verification_result`,
+  `attempt`, `timestamp`).
+- `Lesson` — a compiled learning artifact (`summary`, `avoid_next_time`,
+  `recommended_prompt_patch`, `tags`).
+- `RegressionCase` — a test-like artifact (`name`, `instruction`,
+  `expected_rule`, `failure_reason`).
+- `AgentContext` — what the agent receives each attempt (`task`, `attempt`,
+  `lessons`).
+- `LoopResult` — the structured outcome (`status`, `attempts`, `output`,
+  `failures`, `lessons`, `regression_cases`).
+- `LoopStatus` / `Severity` — enums.
 
 ## Components
 
-### Types (`types.py`)
+### Verifier (`verification.py`)
 
-Pydantic models that form the data contract:
-
-- `Task` — the work item (a prompt plus optional metadata).
-- `Failure` — a single failed attempt (prompt, attempt number, reason).
-- `Lesson` — a distilled takeaway grouped by topic.
-- `LoopResult` — the structured outcome (status, attempts, output, errors).
-- `LoopStatus` — `success` or `failed`.
+Applies an ordered list of rules to an `AgentOutput` and returns the first
+`VerificationResult` that fails. A rule is any `Callable[[Task, AgentOutput],
+VerificationResult]`. Built-in rule builders: `non_empty_output`,
+`contains_required_terms`, `valid_json_when_expected`, and `max_length`.
 
 ### MemoryStore (`memory.py`)
 
-An in-memory accumulator for `Failure` and `Lesson` records. It is intentionally
-minimal so the interface (`record_failure`, `failures`, `failures_for`, …) can
-later be backed by a durable store without changing callers.
+In-memory accumulator for failure traces and lessons. Beyond simple recording it
+offers `recent_failures` and `relevant_lessons(task)` — a deterministic keyword
+overlap search so retries are fed the lessons that matter for the current task.
 
-### Verifier (`verification.py`)
+### LessonGenerator (`lessons.py`)
 
-Applies an ordered list of rules to an output string. A rule is any callable
-that returns an error message on failure or `None` on success. The default rule
-requires a non-empty output; `require_contains` is provided as a builder, and
-callers can add their own via `add_rule`.
+The compiler core. It maps a `FailureTrace` to a `Lesson` using fixed, per-rule
+guidance. It is **deterministic and does no I/O — no LLM, no network** — so the
+same failure always yields the same lesson.
+
+### RegressionGenerator (`regression.py`)
+
+Turns a `FailureTrace` into a `RegressionCase` with a stable, identifier-friendly
+name, recording the rule that must pass for the failure to count as fixed.
 
 ### EntropyLoop (`loop.py`)
 
-The orchestrator. For each attempt it runs the agent, verifies the output, and
-either returns success or records the failure to memory and retries — up to
-`max_attempts`. Agent exceptions are caught and treated as failures so a single
-bad attempt never crashes the loop.
+The orchestrator. Each attempt: build an `AgentContext` (with relevant lessons),
+run the agent, verify. On success it returns; on failure it traces, compiles a
+lesson, generates a regression case, remembers everything, and retries — up to
+`max_attempts`. Agent exceptions are caught and traced as `CRITICAL` failures.
 
 ## Design principles
 
-- **Small surface area.** Every component does one thing.
+- **Failure-first.** The structured failure path is the product, not an afterthought.
+- **Deterministic core.** Lessons and regressions are reproducible and testable.
 - **Callables over inheritance.** Agents and rules are plain functions.
-- **Typed boundaries.** Pydantic models keep inputs and outputs explicit.
-- **No hidden state.** Memory is passed in, not global.
+- **Typed boundaries.** Pydantic models keep every hand-off explicit.
+- **No hidden state, no network.** Memory is passed in; nothing phones home.

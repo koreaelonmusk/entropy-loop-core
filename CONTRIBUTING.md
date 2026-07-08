@@ -32,6 +32,8 @@ Please make sure lint and tests pass before opening a PR.
 ## Guidelines
 
 - Keep the public API small and well documented.
+- Keep the core deterministic: no LLM calls, no network I/O, no randomness in
+  lesson or regression generation.
 - Prefer plain callables over class hierarchies.
 - Add or update tests for any behavior change.
 - Do not add proprietary, vendor-specific, or business logic.

@@ -1,38 +1,72 @@
 """Entropy Loop Core.
 
-An open-source reliability layer for AI agents. It helps agents remember
-failures, verify outputs, and improve through feedback loops.
+An open-source *Failure Compiler* for AI agents. It turns bad outputs into
+structured failure traces, compiles those traces into reusable lessons, retries
+with improved context, and generates regression cases so the same failure does
+not happen twice.
 
 The public API is intentionally small:
 
-- :class:`Task`, :class:`LoopResult`, :class:`LoopStatus`, :class:`Failure`,
-  :class:`Lesson` — typed data objects.
-- :class:`MemoryStore` — in-memory failure/lesson storage.
-- :class:`Verifier` — rule-based output validation.
-- :class:`EntropyLoop` — run, verify, remember, retry.
+- Data contract — :class:`Task`, :class:`AgentOutput`, :class:`VerificationResult`,
+  :class:`FailureTrace`, :class:`Lesson`, :class:`RegressionCase`,
+  :class:`AgentContext`, :class:`LoopResult`, :class:`LoopStatus`, :class:`Severity`.
+- :class:`MemoryStore` — in-memory failure/lesson storage with lesson recall.
+- :class:`Verifier` and rule builders — rule-based output validation.
+- :class:`LessonGenerator` — deterministic failure-to-lesson compilation.
+- :class:`RegressionGenerator` — failure-to-regression-case generation.
+- :class:`EntropyLoop` — run, verify, trace, learn, retry.
 """
 
 from __future__ import annotations
 
+from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
 from .memory import MemoryStore
-from .types import Failure, Lesson, LoopResult, LoopStatus, Task
-from .verification import Rule, VerificationResult, Verifier, require_contains
+from .regression import RegressionGenerator
+from .types import (
+    AgentContext,
+    AgentOutput,
+    FailureTrace,
+    Lesson,
+    LoopResult,
+    LoopStatus,
+    RegressionCase,
+    Severity,
+    Task,
+    VerificationResult,
+)
+from .verification import (
+    Rule,
+    Verifier,
+    contains_required_terms,
+    max_length,
+    non_empty_output,
+    valid_json_when_expected,
+)
 
 __version__ = "0.1.0"
 
 __all__ = [
     "Agent",
+    "AgentContext",
+    "AgentOutput",
     "EntropyLoop",
-    "Failure",
+    "FailureTrace",
     "Lesson",
+    "LessonGenerator",
     "LoopResult",
     "LoopStatus",
     "MemoryStore",
+    "RegressionCase",
+    "RegressionGenerator",
     "Rule",
+    "Severity",
     "Task",
     "VerificationResult",
     "Verifier",
-    "require_contains",
+    "contains_required_terms",
+    "max_length",
+    "non_empty_output",
+    "valid_json_when_expected",
     "__version__",
 ]
