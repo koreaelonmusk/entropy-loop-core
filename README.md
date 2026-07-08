@@ -24,13 +24,36 @@ entropy-loop replay-demo
 
 Works on Windows, macOS, and Linux with Python 3.10+.
 
-### Development install (from source)
+<details>
+<summary>Development setup</summary>
+
+Use a virtual environment when working on the repository.
+
+#### macOS / Linux
 
 ```bash
 git clone https://github.com/koreaelonmusk/entropy-loop-core.git
 cd entropy-loop-core
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+pytest
 ```
+
+#### Windows PowerShell
+
+```powershell
+git clone https://github.com/koreaelonmusk/entropy-loop-core.git
+cd entropy-loop-core
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+py -m pip install --upgrade pip
+py -m pip install -e ".[dev]"
+pytest
+```
+
+</details>
 
 ## Why
 
