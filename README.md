@@ -1,14 +1,13 @@
 # Entropy Loop Core
 
-**A Failure Compiler for AI agents.** Turn bad outputs into traces, lessons,
-retries, and regression cases.
+**A Failure Compiler for AI agents.**
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
-Entropy Loop Core turns bad AI agent outputs into structured failure traces,
-reusable lessons, safer retry context, and regression cases.
+Turn bad agent outputs into structured failure traces, reusable lessons, safer
+retry context, evaluation summaries, and regression cases.
 
 **Stop throwing failures away. Compile them.**
 
@@ -178,7 +177,8 @@ A health check is also available:
 entropy-loop doctor
 ```
 
-See [examples/failure_compiler_demo.py](examples/failure_compiler_demo.py).
+See [examples/failure_compiler_demo.py](examples/failure_compiler_demo.py). To
+record a demo GIF, see [docs/demo.md](docs/demo.md).
 
 ## Architecture
 
@@ -228,13 +228,22 @@ This does not perform model training or guarantee correctness; it captures
 failures, generates reusable lessons, improves retry context, and helps prevent
 repeated failures through regression cases.
 
+## Releases
+
+- **v0.2.0** — failure classification, verification policy, fingerprints,
+  evaluation summary, and regression export. *(current)*
+- **v0.1.0** — the first public Failure Compiler loop: verify, trace, learn,
+  retry, regress.
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
+
 ## Roadmap
 
-- **v0.1.0** — Failure Compiler foundations: verify, trace, learn, retry, regress.
-- **v0.2.0** — failure classification, verification policy, fingerprints,
-  evaluation summary, regression export. *(current)*
-- **Future (not now)** — async, pluggable verifier registry, persistence
-  adapters, richer evaluation reports, integrations, advanced policies.
+- **v0.3.0 (directional)** — *replay*: turn regression cases into a runnable
+  suite so a remembered failure can be re-checked, not just stored.
+- **v0.4.0 (directional)** — *memory policy*: what to remember, group, and forget.
+- **Later** — async, pluggable verifier registry, persistence adapters, richer
+  evaluation reports, integrations.
 
 The reliability model is documented in
 [docs/reliability-model.md](docs/reliability-model.md); full plan in
