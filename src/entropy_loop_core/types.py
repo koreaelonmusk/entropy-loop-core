@@ -267,3 +267,73 @@ class EvaluationSummary(BaseModel):
     generated_regression_cases: int = Field(
         default=0, ge=0, description="Regression cases generated from failures."
     )
+
+
+class RegressionSuite(BaseModel):
+    """A named collection of regression cases that can be replayed together.
+
+    Attributes:
+        name: A human-readable name for the suite.
+        cases: The regression cases in the suite.
+        metadata: Optional free-form context about the suite.
+    """
+
+    name: str = Field(..., description="Human-readable name for the suite.")
+    cases: list[RegressionCase] = Field(
+        default_factory=list, description="Regression cases in the suite."
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Optional free-form context."
+    )
+
+
+class RegressionRunResult(BaseModel):
+    """The outcome of replaying a single regression case.
+
+    Attributes:
+        case: The regression case that was replayed.
+        passed: Whether the replayed output satisfied verification.
+        output: The agent output produced during replay, if any.
+        verification_result: The verdict of verifying the output, if reached.
+        error: An error message if the agent raised during replay.
+    """
+
+    case: RegressionCase = Field(..., description="The replayed regression case.")
+    passed: bool = Field(..., description="Whether the replay passed.")
+    output: AgentOutput | None = Field(
+        default=None, description="Agent output produced during replay."
+    )
+    verification_result: VerificationResult | None = Field(
+        default=None, description="Verdict of verifying the output."
+    )
+    error: str | None = Field(
+        default=None, description="Error message if the agent raised."
+    )
+
+
+class RegressionReport(BaseModel):
+    """A summary of replaying a whole regression suite.
+
+    Attributes:
+        suite_name: The name of the suite that was replayed.
+        total_cases: How many cases were replayed.
+        passed: How many cases passed.
+        failed: How many cases failed.
+        results: The per-case results, in order.
+    """
+
+    suite_name: str = Field(..., description="Name of the replayed suite.")
+    total_cases: int = Field(..., ge=0, description="Cases replayed.")
+    passed: int = Field(..., ge=0, description="Cases that passed.")
+    failed: int = Field(..., ge=0, description="Cases that failed.")
+    results: list[RegressionRunResult] = Field(
+        default_factory=list, description="Per-case results, in order."
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def success_rate(self) -> float:
+        """Percentage of cases that passed, from 0.0 to 100.0."""
+        if self.total_cases == 0:
+            return 0.0
+        return round(self.passed / self.total_cases * 100, 1)

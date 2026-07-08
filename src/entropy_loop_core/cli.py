@@ -16,7 +16,8 @@ from .evaluation import summarize
 from .loop import EntropyLoop
 from .memory import MemoryStore
 from .regression import generate_regression_case
-from .types import AgentOutput, RetryContext, Task
+from .replay import RegressionRunner
+from .types import AgentOutput, FailureTrace, RegressionSuite, RetryContext, Task
 from .verification import VerificationPolicy, Verifier
 
 app = typer.Typer(
@@ -81,6 +82,45 @@ def demo() -> None:
         typer.echo(f"9. Regression case generated: {case.name}")
 
     if result.status != "success":
+        raise typer.Exit(code=1)
+
+
+@app.command(name="replay-demo")
+def replay_demo() -> None:
+    """Generate a regression case from a failure, then replay it as a suite."""
+    task = Task(id="replay-001", instruction="report the job status")
+    verifier = Verifier().require_non_empty().require_terms(["status"])
+
+    # A past failure: the agent omitted the required term "status".
+    bad_output = AgentOutput(content="Processing complete.")
+    trace = FailureTrace(
+        task=task,
+        output=bad_output,
+        verification_result=verifier.verify(bad_output),
+        attempt=1,
+    )
+    case = generate_regression_case(trace)
+    suite = RegressionSuite(name="job-status-regressions", cases=[case])
+
+    typer.echo("Entropy Loop Replay Demo")
+    typer.echo(f"1. Regression suite created: {suite.name!r}")
+    typer.echo(f"2. Cases: {len(suite.cases)}")
+    typer.echo(f"3. Replaying: {case.name}")
+
+    # A corrected agent now includes the required term.
+    def corrected_agent(task: Task, context: RetryContext) -> AgentOutput:
+        return AgentOutput(content="status: ok - processing complete.")
+
+    report = RegressionRunner().run_suite(suite, corrected_agent, verifier)
+
+    outcome = "passed" if report.results[0].passed else "failed"
+    typer.echo(f"4. Result: {outcome}")
+    typer.echo(
+        f"5. Report: total={report.total_cases}, passed={report.passed}, "
+        f"failed={report.failed}, success_rate={report.success_rate}%"
+    )
+
+    if report.failed:
         raise typer.Exit(code=1)
 
 
