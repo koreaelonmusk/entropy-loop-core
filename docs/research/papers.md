@@ -5,6 +5,9 @@ work. Every row summarizes a **publicly known** idea and the **generic** design
 primitive it suggests for an open-source Failure Compiler. No private data,
 benchmarks, prompts, or product internals appear here.
 
+> For how deeply each paper is reflected in the current code, see
+> [paper-primitive-matrix.md](paper-primitive-matrix.md).
+
 > **Citation note:** titles and years are recorded as a maintainer reading list.
 > Verify each citation against its primary source before using it in a formal
 > publication. Where a year is marked `(verify)`, confirm the reference first.

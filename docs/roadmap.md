@@ -26,7 +26,20 @@ directional, not a commitment. It contains no private commercial detail.
 - Improved `entropy-loop demo` and a new `entropy-loop doctor`.
 - `docs/reliability-model.md` and expanded docs.
 
-## Future (not now)
+## v0.3.0 — Replay (directional)
+
+Theme: *failures should not only be remembered — they should be replayed.* Turn
+generated regression cases into a runnable suite so a remembered failure can be
+re-checked, not just stored. Candidate public-safe primitives: a regression
+suite, a runner, a pass/fail report, and case load/export.
+
+## v0.4.0 — Memory policy (directional)
+
+Decide what to remember, group, and forget: lesson deduplication, fingerprint
+grouping, memory compaction, and recent / relevant / frequent recall — all as a
+simple, deterministic, public-safe policy interface.
+
+## Later / not now
 
 Deferred until a real, public use case justifies the added surface:
 
@@ -34,8 +47,7 @@ Deferred until a real, public use case justifies the added surface:
 - a custom verifier / rule registry,
 - persistence adapters (file, then others) as a simple optional interface,
 - richer evaluation reports,
-- framework integrations,
-- advanced memory and reliability policies.
+- framework and CI integrations.
 
 ## Non-goals
 
