@@ -5,11 +5,6 @@ what may live here and what must not.
 
 > **Open-source the primitive, not the private advantage.**
 
-A deeper, research-oriented version of this policy — with a full classification
-scheme and a paper-by-paper safety review — lives in
-[research/public-private-boundary.md](research/public-private-boundary.md). This
-file is the short, canonical version.
-
 ## 1. What is safe to publish
 
 - Generic AI-agent reliability primitives (verification, retry, memory,
@@ -25,8 +20,8 @@ file is the short, canonical version.
 
 Never include, in any form:
 
-- private business logic or private QA data.
-- proprietary system internals or proprietary private architecture.
+- Private or business-specific logic and QA data.
+- Proprietary internal architecture and system design.
 - Customer data or user logs.
 - Private or proprietary prompts.
 - Proprietary algorithms or internal operating playbooks.

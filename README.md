@@ -201,8 +201,8 @@ Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResu
 - **`MemoryStore`** remembers failures and recalls relevant lessons.
 - **`generate_regression_case`** turns a failure into a test-like case.
 
-Details in [docs/architecture.md](docs/architecture.md); the reasoning in
-[docs/research/failure-compiler-theory.md](docs/research/failure-compiler-theory.md).
+Details in [docs/architecture.md](docs/architecture.md); the reliability model in
+[docs/reliability-model.md](docs/reliability-model.md).
 
 ## Public / private boundary
 

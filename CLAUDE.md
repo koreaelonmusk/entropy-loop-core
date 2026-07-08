@@ -24,8 +24,8 @@ Keep the scope tight. This is a reliability core, not a framework, not a product
 
 Claude must **never** add any of the following to this repository:
 
-- private business logic
-- proprietary system internals
+- private or business-specific logic
+- proprietary product internals
 - private or proprietary prompts
 - customer data
 - enterprise dashboard code
