@@ -202,7 +202,8 @@ Task ─▶ Agent ─▶ AgentOutput ─▶ Verifier ─▶ pass ─▶ LoopResu
 - **`generate_regression_case`** turns a failure into a test-like case.
 
 Details in [docs/architecture.md](docs/architecture.md); the reliability model in
-[docs/reliability-model.md](docs/reliability-model.md).
+[docs/reliability-model.md](docs/reliability-model.md); the public research
+influences in [docs/research-influences.md](docs/research-influences.md).
 
 ## Public / private boundary
 
