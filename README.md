@@ -2,6 +2,7 @@
 
 **A Failure Compiler for AI agents.**
 
+[![CI](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml/badge.svg)](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
@@ -257,6 +258,9 @@ ruff check .        # lint
 ruff format .       # format
 pytest              # tests
 ```
+
+To reproduce a first-time developer's setup, see
+[docs/launch-checklist.md](docs/launch-checklist.md).
 
 ## Contributing
 
