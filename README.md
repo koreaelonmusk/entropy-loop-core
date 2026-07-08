@@ -1,10 +1,41 @@
 # Entropy Loop Core
 
-**A Failure Compiler for AI agents.** It turns bad outputs into failure traces,
-lessons, retries, and regression cases.
+**A Failure Compiler for AI agents.** Turn bad outputs into traces, lessons,
+retries, and regression cases.
 
-> Entropy Loop Core is an open-source Failure Compiler for AI agents. It turns
-> bad outputs into failure traces, lessons, retries, and regression cases.
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+
+Entropy Loop Core turns bad AI agent outputs into structured failure traces,
+reusable lessons, safer retry context, and regression cases.
+
+**Stop throwing failures away. Compile them.**
+
+```bash
+pip install -e ".[dev]"
+entropy-loop demo
+```
+
+## The loop
+
+```text
+Task
+  ↓
+AgentOutput
+  ↓
+VerificationResult
+  ↓
+FailureTrace
+  ↓
+Lesson
+  ↓
+RetryContext
+  ↓
+LoopResult
+  ↓
+RegressionCase
+```
 
 ## Core thesis
 
@@ -12,7 +43,8 @@ lessons, retries, and regression cases.
 > into lessons**, and **reused** in future attempts.
 
 This project is the smallest sharp primitive that proves that thesis — not a
-large agent framework.
+large agent framework. It **captures, classifies, and summarizes** failures; it
+does **not** train models or guarantee correctness.
 
 ## Why this exists
 
@@ -60,6 +92,17 @@ or guarantee correctness.
 - **Regression export** — `export_regression_case(s)` renders cases as plain dicts.
 - **Sharper CLI** — `entropy-loop demo` shows category, fingerprint, and summary;
   new `entropy-loop doctor` health check.
+
+## Features
+
+- **Typed failure traces** — structured, fingerprinted records of what failed.
+- **Deterministic verifier** — composable rules; no LLM, no network, no surprises.
+- **In-memory lesson store** — remembers failures and recalls relevant lessons.
+- **Retry context** — feeds prior failures and lessons into the next attempt.
+- **Regression case generation** — pin failures so they can be checked later.
+- **Evaluation summary** — a compact, public-safe rollup of each run.
+- **CLI demo + doctor** — see the whole loop, and health-check the install.
+- **Public-safe docs** — architecture, reliability model, and a clear boundary.
 
 ## Installation
 
@@ -205,7 +248,11 @@ ruff format .       # format
 pytest              # tests
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and
+## Contributing
+
+Contributions are welcome. Please keep the core small, readable, and
+deterministic, and respect the public/private boundary. See
+[CONTRIBUTING.md](CONTRIBUTING.md) and
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
