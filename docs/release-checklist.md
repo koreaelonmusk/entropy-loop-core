@@ -49,11 +49,13 @@ gh release create vX.Y.Z --title "Entropy Loop Core vX.Y.Z" \
 
 ## PyPI (only when explicitly approved)
 
-Not yet enabled. When approved:
+Publishing uses **Trusted Publishing** (OIDC) via
+[`.github/workflows/publish.yml`](../.github/workflows/publish.yml). See
+[pypi-checklist.md](pypi-checklist.md) for the one-time setup and publish flow.
+A manual token-based rehearsal on TestPyPI is also possible:
 
 ```bash
 twine upload --repository testpypi dist/*   # rehearse on TestPyPI first
-twine upload dist/*                          # PyPI
 ```
 
 - [ ] rehearsed on TestPyPI
