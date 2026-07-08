@@ -43,3 +43,20 @@ jobs:
 
       - name: Version import check
         run: python -c "import entropy_loop_core; print(entropy_loop_core.__version__)"
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build and check
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check dist/*

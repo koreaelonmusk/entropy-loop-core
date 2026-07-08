@@ -14,12 +14,16 @@ cases and replay them before the same bug ships again.
 
 ## Get started
 
-Installed from source (not on PyPI yet):
+Install from source (a package-index install is planned after stabilization):
 
 ```bash
-pip install -e ".[dev]"
+git clone https://github.com/koreaelonmusk/entropy-loop-core.git
+cd entropy-loop-core
+python -m pip install -e ".[dev]"
 entropy-loop replay-demo
 ```
+
+Works on Windows, macOS, and Linux with Python 3.10+.
 
 ## Why
 
