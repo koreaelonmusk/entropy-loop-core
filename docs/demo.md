@@ -3,6 +3,14 @@
 A recorded GIF lives at [`docs/assets/demo.gif`](assets/demo.gif) and is shown in
 the README. This page explains how to (re)generate it from the real CLI.
 
+There are two tape scripts:
+
+- [`demo.hero.tape`](../demo.hero.tape) — the **README hero GIF**: a short,
+  cinematic take on `entropy-loop replay-demo` (narrative frame, then the real
+  command and its result). This is what renders `docs/assets/demo.gif`.
+- [`demo.tape`](../demo.tape) — a plain, lower-level recording of
+  `entropy-loop demo` + `doctor`.
+
 ## What the demo shows
 
 `entropy-loop demo` runs a fake agent that fails once (a required term is
@@ -32,14 +40,15 @@ Entropy Loop Demo
 ```bash
 brew install vhs          # or: go install github.com/charmbracelet/vhs@latest
 pip install -e ".[dev]"   # so `entropy-loop` is on PATH
-vhs demo.tape             # produces demo.gif
+vhs demo.hero.tape        # renders docs/assets/demo.gif (the README hero)
+vhs demo.tape             # renders demo.gif (plain demo + doctor)
 ```
 
-The tape script lives at [`demo.tape`](../demo.tape). Once you have `demo.gif`,
-add it near the top of the README, for example:
+The hero GIF already lives at `docs/assets/demo.gif` and is embedded near the top
+of the README:
 
 ```markdown
-![entropy-loop demo](demo.gif)
+![Entropy Loop Core replay demo](./docs/assets/demo.gif)
 ```
 
 ## Alternative: asciinema

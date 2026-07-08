@@ -20,7 +20,7 @@ entropy-loop demo
 
 ## Demo
 
-![Entropy Loop Core demo](./docs/assets/demo.gif)
+![Entropy Loop Core replay demo](./docs/assets/demo.gif)
 
 ## The loop
 
