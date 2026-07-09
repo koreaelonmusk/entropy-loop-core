@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from typer.testing import CliRunner
 
 from entropy_loop_core.cli import app
@@ -116,3 +118,79 @@ def test_run_pack_writes_reports(tmp_path) -> None:
     )
     assert result.exit_code == 0
     assert jp.exists() and xp.exists()
+
+
+_GOOD = "import sys, json; sys.stdin.read(); print(json.dumps({'v': 1}))"
+_BAD = "import sys; sys.stdin.read(); sys.exit(4)"
+
+
+def test_agent_demo_runs() -> None:
+    result = runner.invoke(app, ["agent-demo"])
+    assert result.exit_code == 0
+    assert "Entropy Loop Agent Demo" in result.stdout
+    assert "Refreshed: 3" in result.stdout
+    assert "Passed: 3" in result.stdout
+
+
+def test_refresh_pack_exit_0_and_run(tmp_path) -> None:
+    src = tmp_path / "in.pack.json"
+    dst = tmp_path / "out.pack.json"
+    _write_pack(src, {"a": "old"})
+    result = runner.invoke(
+        app, ["refresh-pack", str(src), str(dst), "--", sys.executable, "-c", _GOOD]
+    )
+    assert result.exit_code == 0
+    assert dst.exists()
+    # refreshed pack passes run-pack
+    run = runner.invoke(app, ["run-pack", str(dst)])
+    assert run.exit_code == 0
+
+
+def test_refresh_pack_exit_1_when_agent_fails(tmp_path) -> None:
+    src = tmp_path / "in.pack.json"
+    dst = tmp_path / "out.pack.json"
+    _write_pack(src, {"a": "old"})
+    result = runner.invoke(
+        app, ["refresh-pack", str(src), str(dst), "--", sys.executable, "-c", _BAD]
+    )
+    assert result.exit_code == 1
+
+
+def test_refresh_pack_exit_2_missing_input(tmp_path) -> None:
+    dst = tmp_path / "out.pack.json"
+    result = runner.invoke(
+        app,
+        ["refresh-pack", "missing.json", str(dst), "--", sys.executable, "-c", _GOOD],
+    )
+    assert result.exit_code == 2
+
+
+def test_refresh_pack_exit_2_no_command(tmp_path) -> None:
+    src = tmp_path / "in.pack.json"
+    dst = tmp_path / "out.pack.json"
+    _write_pack(src, {"a": "old"})
+    result = runner.invoke(app, ["refresh-pack", str(src), str(dst)])
+    assert result.exit_code == 2
+
+
+def test_refresh_pack_writes_json_report(tmp_path) -> None:
+    src = tmp_path / "in.pack.json"
+    dst = tmp_path / "out.pack.json"
+    rep = tmp_path / "reports" / "refresh.json"
+    _write_pack(src, {"a": "old"})
+    result = runner.invoke(
+        app,
+        [
+            "refresh-pack",
+            str(src),
+            str(dst),
+            "--json-report",
+            str(rep),
+            "--",
+            sys.executable,
+            "-c",
+            _GOOD,
+        ],
+    )
+    assert result.exit_code == 0
+    assert rep.exists()

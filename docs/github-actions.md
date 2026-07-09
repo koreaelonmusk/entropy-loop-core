@@ -51,15 +51,38 @@ returns a non-zero exit code:
 | `1` | a regression reappeared — the job fails |
 | `2` | invalid path or malformed pack — the job fails |
 
+## Live agent gate with refresh-pack
+
+`refresh-pack` runs an explicit local agent command to refresh candidate outputs
+before `run-pack` checks them:
+
+```yaml
+      - name: Refresh regression pack from current agent
+        run: |
+          entropy-loop refresh-pack examples/json_agent_guard.pack.json /tmp/refreshed.pack.json \
+            -- python examples/json_agent_agent.py
+
+      - name: Run refreshed regression pack
+        run: |
+          entropy-loop run-pack /tmp/refreshed.pack.json \
+            --json-report reports/entropy-loop.json \
+            --junit-report reports/entropy-loop.junit.xml
+```
+
+Boundary:
+
+- Entropy Loop Core does not call a live agent unless you explicitly pass a
+  command after `--`.
+- The command is local and user-provided; no shell is used by default.
+- Entropy Loop Core does not inject secrets and makes no network calls itself.
+
+See [agent-adapters.md](agent-adapters.md) for the full behavior and exit codes.
+
 ## Static vs. live gate
 
-`run-pack` verifies the candidate outputs **stored in the pack** — it does not
-call your agent. The workflow above therefore checks a committed snapshot.
-
-To gate on your agent's *current* behavior, add a step **before** `run-pack` that
-runs your agent and refreshes the pack's outputs (via `save_regression_pack`),
-then run `run-pack` against the refreshed pack. See
-[regression-packs.md](regression-packs.md#what-run-pack-checks-and-what-it-does-not).
+Without `refresh-pack`, `run-pack` verifies the candidate outputs **stored in the
+pack** — a committed snapshot. Add a `refresh-pack` step first (above) to gate on
+your agent's *current* behavior.
 
 ## Notes
 
