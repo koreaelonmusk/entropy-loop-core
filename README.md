@@ -192,7 +192,8 @@ calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
-- **v0.4.0** — memory policy / lesson compaction *(current)*
+- **v0.5.0** — regression packs / CI gate *(current)*
+- **v0.4.0** — memory policy / lesson compaction
 - **v0.3.1** — packaging readiness
 - **v0.3.0** — replay
 - **v0.2.0** — classification + evaluation

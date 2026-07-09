@@ -6,9 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-09
+
 Theme: **regression pack + CI gate**. Turn captured agent failures into portable
 packs that run in CI and fail the build when a known regression reappears.
-*(Version not yet bumped; a release cut will set 0.5.0.)*
 
 ### Added
 
@@ -27,6 +28,8 @@ packs that run in CI and fail the build when a known regression reappears.
 
 - Deterministic; no LLM calls, no network, no database, no vector store, no RAG,
   no telemetry, no hidden persistence.
+- `run-pack` verifies stored candidate outputs from a pack; it does not call a
+  live agent. Exit codes: `0` pass, `1` regression failure, `2` invalid input.
 
 ## [0.4.0] - 2026-07-09
 
@@ -159,6 +162,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.5.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.5.0
 [0.4.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.4.0
 [0.3.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.1
 [0.3.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.0
