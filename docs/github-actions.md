@@ -60,7 +60,7 @@ before `run-pack` checks them:
       - name: Refresh regression pack from current agent
         run: |
           entropy-loop refresh-pack examples/json_agent_guard.pack.json /tmp/refreshed.pack.json \
-            -- python examples/json_agent_agent.py
+            -- python3 examples/json_agent_agent.py
 
       - name: Run refreshed regression pack
         run: |

@@ -21,7 +21,7 @@ pass to `refresh-pack`.
 `refresh-pack` runs a command **you supply after `--`**:
 
 ```bash
-entropy-loop refresh-pack input.pack.json output.pack.json -- python my_agent.py
+entropy-loop refresh-pack input.pack.json output.pack.json -- python3 my_agent.py
 ```
 
 - **No shell by default.** The command is run as an argv list, not through a
@@ -49,7 +49,7 @@ entropy-loop agent-demo   # in-process demo of refresh + run
 entropy-loop refresh-pack input.pack.json output.pack.json \
   --json-report reports/refresh.json \
   --fail-fast \
-  -- python my_agent.py
+  -- python3 my_agent.py
 ```
 
 Exit codes for `refresh-pack`:

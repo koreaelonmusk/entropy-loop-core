@@ -153,7 +153,7 @@ gate on your agent's *current* output, refresh the pack from an explicit local
 command first (no shell, no secret injection):
 
 ```bash
-entropy-loop refresh-pack input.pack.json output.pack.json -- python my_agent.py
+entropy-loop refresh-pack input.pack.json output.pack.json -- python3 my_agent.py
 entropy-loop run-pack output.pack.json
 ```
 
