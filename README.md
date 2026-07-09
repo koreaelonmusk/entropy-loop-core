@@ -182,7 +182,7 @@ missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
 
 ```yaml
 - name: Compare Entropy Loop reports
-  uses: koreaelonmusk/entropy-loop-core@v0.8.1
+  uses: koreaelonmusk/entropy-loop-core@v0.9.0
   with:
     baseline-report: baselines/entropy-loop.json
     current-report: reports/current.json
@@ -243,7 +243,8 @@ calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
-- **v0.8.1** — Action runner hardening (self-test) *(current)*
+- **v0.9.0** — CI-native reporter outputs (JUnit XML) *(current)*
+- **v0.8.1** — Action runner hardening (self-test)
 - **v0.8.0** — GitHub Action / CI evidence bundle
 - **v0.7.0** — regression triage / baseline diff
 - **v0.6.0** — agent adapter / live pack refresh

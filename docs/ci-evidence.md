@@ -126,12 +126,17 @@ entropy-loop write-ci-evidence baselines/entropy-loop.json reports/current.json 
 `--json-report` and `--markdown-report`. The GitHub Action exposes an optional
 `junit-report` input that maps to the same flag (empty means no JUnit file).
 
+**JUnit failures indicate reported regression/test state; the selected `fail-on`
+policy controls the process exit code.** So a persistent failure can appear as a
+JUnit `<failure>` even when `--fail-on new-failures` exits `0`.
+
 Mapping (transition state only — no root-cause claims):
 
 - currently-failing cases → `<failure>` with type `new-failure` or
   `persistent-failure`,
 - resolved and passing cases → passing `<testcase>`,
-- skipped or missing cases → `<skipped>`,
+- skipped or missing cases → `<skipped>` (missing-in-current is skipped, not an
+  error),
 - legacy reports without per-case data → a single `regression-summary` testcase.
 
 The output uses only the standard library, escapes XML, and contains no
