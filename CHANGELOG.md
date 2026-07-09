@@ -6,6 +6,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Theme: **GitHub Action + CI evidence bundle**. From regression reports to CI
+evidence in one GitHub Action.
+
+### Added
+
+- `CIEvidenceBundle` and `CIEvidenceWriter` (`write_bundle`) — a deterministic,
+  local evidence directory (`triage.json`, `triage.md`, `summary.txt`,
+  `manifest.json`) written from a `RegressionTriage`.
+- `export_github_step_summary` and `append_github_step_summary` — a compact,
+  deterministic GitHub Actions step summary; reads only `GITHUB_STEP_SUMMARY`,
+  and only when asked.
+- `entropy-loop ci-demo` and `entropy-loop write-ci-evidence BASELINE CURRENT`
+  (options `--fail-on`, `--evidence-dir`, `--json-report`, `--markdown-report`,
+  `--github-step-summary`, `--append-github-step-summary`, `--no-step-summary`;
+  exit codes 0/1/2).
+- First-party composite GitHub Action (`action.yml`) that installs the package,
+  runs `write-ci-evidence`, and appends a step summary.
+- `docs/ci-evidence.md` and a GitHub Actions workflow example.
+
+### Changed
+
+- `RegressionTriage` now records the applied `policy` (backward-compatible,
+  nullable) so evidence bundles and step summaries can report it.
+
+### Safety
+
+- Local and deterministic: writes only the fixed bundle files inside the named
+  directory; no timestamps, no environment capture.
+- No GitHub API calls, no PR/issue comments, no artifact uploads, no
+  `GITHUB_TOKEN`, no network, no telemetry, no hidden persistence.
+- Transition classification only — not root-cause analysis, no correctness
+  guarantee.
+
 ## [0.7.0] - 2026-07-10
 
 Theme: **regression triage + baseline diff**. Don't just fail CI — explain what

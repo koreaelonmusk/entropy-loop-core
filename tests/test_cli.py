@@ -299,6 +299,116 @@ def test_compare_reports_writes_reports(tmp_path) -> None:
     assert jp.exists() and mp.exists()
 
 
+def test_ci_demo_runs() -> None:
+    result = runner.invoke(app, ["ci-demo"])
+    assert result.exit_code == 0
+    assert "Entropy Loop CI Demo" in result.stdout
+    assert "Evidence bundle written: 4 files" in result.stdout
+
+
+def test_write_ci_evidence_exit_1_and_files(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    ev = tmp_path / "evidence"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app,
+        ["write-ci-evidence", str(base), str(curr), "--evidence-dir", str(ev)],
+    )
+    assert result.exit_code == 1  # new failure under default new-failures
+    for name in ("triage.json", "triage.md", "summary.txt", "manifest.json"):
+        assert (ev / name).exists()
+
+
+def test_write_ci_evidence_exit_0_when_passing(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(tmp_path / "e"),
+        ],
+    )
+    assert result.exit_code == 0
+
+
+def test_write_ci_evidence_never_policy(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--fail-on",
+            "never",
+            "--evidence-dir",
+            str(tmp_path / "e"),
+        ],
+    )
+    assert result.exit_code == 0
+
+
+def test_write_ci_evidence_exit_2_missing(tmp_path) -> None:
+    curr = tmp_path / "current.json"
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(app, ["write-ci-evidence", "missing.json", str(curr)])
+    assert result.exit_code == 2
+
+
+def test_write_ci_evidence_exit_2_malformed(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    base.write_text("{ not json")
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(app, ["write-ci-evidence", str(base), str(curr)])
+    assert result.exit_code == 2
+
+
+def test_write_ci_evidence_exit_2_invalid_policy(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app, ["write-ci-evidence", str(base), str(curr), "--fail-on", "bogus"]
+    )
+    assert result.exit_code == 2
+
+
+def test_write_ci_evidence_appends_step_summary(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    summary = tmp_path / "step.md"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(tmp_path / "e"),
+            "--github-step-summary",
+            str(summary),
+        ],
+    )
+    assert result.exit_code == 0
+    assert summary.exists()
+    assert "regression triage" in summary.read_text()
+
+
 def test_refresh_pack_writes_json_report(tmp_path) -> None:
     src = tmp_path / "in.pack.json"
     dst = tmp_path / "out.pack.json"

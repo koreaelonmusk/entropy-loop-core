@@ -33,6 +33,12 @@ from .agent_adapter import (
     export_refresh_report,
     write_refresh_report,
 )
+from .ci_evidence import (
+    CIEvidenceBundle,
+    CIEvidenceWriter,
+    append_github_step_summary,
+    export_github_step_summary,
+)
 from .evaluation import summarize
 from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
@@ -113,6 +119,8 @@ __all__ = [
     "AgentOutput",
     "AgentRunInput",
     "AgentRunResult",
+    "CIEvidenceBundle",
+    "CIEvidenceWriter",
     "CaseTransition",
     "CommandAgentAdapter",
     "CompactionResult",
@@ -148,7 +156,9 @@ __all__ = [
     "VerificationPolicy",
     "VerificationResult",
     "Verifier",
+    "append_github_step_summary",
     "export_compaction_result",
+    "export_github_step_summary",
     "export_json_report",
     "export_junit_report",
     "export_refresh_report",
