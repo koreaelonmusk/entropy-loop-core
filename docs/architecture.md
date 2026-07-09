@@ -138,6 +138,15 @@ joins their per-case `case_results` by case id and classifies each transition
 stable exit codes. Local-only: no network, no GitHub API. See
 [regression-triage.md](regression-triage.md).
 
+### `ci_evidence.py` — `CIEvidenceWriter`
+
+Turns a `RegressionTriage` into a deterministic local evidence directory
+(`triage.json`, `triage.md`, `summary.txt`, `manifest.json`) and, on request,
+appends a compact GitHub Actions step summary (reading only `GITHUB_STEP_SUMMARY`).
+The CLI `entropy-loop write-ci-evidence` and the root `action.yml` composite
+Action wire this into CI. No GitHub API, no token, no network. See
+[ci-evidence.md](ci-evidence.md).
+
 ### `evaluation.py` — `summarize`
 
 A pure function that rolls a `LoopResult` (and any generated regression cases)

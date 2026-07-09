@@ -85,4 +85,5 @@ on the command you run, so `refresh-pack` is only as deterministic as your agent
 
 Once you have `run-pack` JSON reports from two runs, `compare-reports` diffs them
 and classifies each case as newly failing, fixed, persistent, or missing — so CI
-can fail only on new regressions. See [regression-triage.md](regression-triage.md).
+can fail only on new regressions. See [regression-triage.md](regression-triage.md)
+and [ci-evidence.md](ci-evidence.md).

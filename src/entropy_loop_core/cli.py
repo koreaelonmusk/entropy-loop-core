@@ -22,6 +22,10 @@ from .agent_adapter import (
     RegressionPackRefresher,
     write_refresh_report,
 )
+from .ci_evidence import (
+    CIEvidenceWriter,
+    append_github_step_summary,
+)
 from .evaluation import summarize
 from .lessons import LessonGenerator
 from .loop import EntropyLoop
@@ -500,6 +504,127 @@ def compare_reports(
     if markdown_report:
         write_regression_triage_markdown(triage, markdown_report)
         typer.echo(f"markdown report: {markdown_report}")
+
+    if not triage.success:
+        raise typer.Exit(code=1)
+
+
+@app.command(name="ci-demo")
+def ci_demo() -> None:
+    """Compare two runs, write a CI evidence bundle, and print the summary."""
+    policy = VerificationPolicy(require_non_empty=True, expect_json=True)
+
+    def case(name: str) -> RegressionCase:
+        return RegressionCase(
+            name=name,
+            instruction=f"return {name} as JSON",
+            expected_rule="valid_json_when_expected",
+            failure_reason="expected valid JSON",
+            category="invalid_json",
+        )
+
+    cases = [case("json-1"), case("json-2"), case("json-3")]
+    baseline = RegressionPack(
+        name="ci-demo",
+        policy=policy,
+        cases=cases,
+        outputs={"json-1": "{}", "json-2": "not json", "json-3": "{}"},
+    )
+    current = RegressionPack(
+        name="ci-demo",
+        policy=policy,
+        cases=cases,
+        outputs={"json-1": "not json", "json-2": "{}", "json-3": "{}"},
+    )
+    triage = RegressionTriageEngine().compare_reports(
+        _triage_report(baseline), _triage_report(current), TriagePolicy()
+    )
+
+    typer.echo("Entropy Loop CI Demo")
+    typer.echo(f"1. {triage.summary}")
+    with tempfile.TemporaryDirectory() as directory:
+        bundle = CIEvidenceWriter().write_bundle(triage, directory)
+        typer.echo(f"2. Evidence bundle written: {len(bundle.files)} files")
+        for name in bundle.files:
+            typer.echo(f"   - {name}")
+    typer.echo(
+        f"3. Result: {'pass' if triage.success else 'fail'} (policy {triage.policy})"
+    )
+    typer.echo("4. CI evidence ready for GitHub Actions")
+
+
+@app.command(name="write-ci-evidence")
+def write_ci_evidence(
+    baseline_json: str = typer.Argument(..., help="Path to the baseline JSON report."),
+    current_json: str = typer.Argument(..., help="Path to the current JSON report."),
+    fail_on: str = typer.Option(
+        "new-failures",
+        "--fail-on",
+        help="When to fail: new-failures | any-failures | never.",
+    ),
+    evidence_dir: str = typer.Option(
+        "entropy-loop-evidence",
+        "--evidence-dir",
+        help="Directory to write the CI evidence bundle into.",
+    ),
+    json_report: str = typer.Option(
+        None, "--json-report", help="Also write the triage JSON to this path."
+    ),
+    markdown_report: str = typer.Option(
+        None, "--markdown-report", help="Also write the triage Markdown to this path."
+    ),
+    github_step_summary: str = typer.Option(
+        None, "--github-step-summary", help="Append the step summary to this path."
+    ),
+    append_github_step_summary_flag: bool = typer.Option(
+        False,
+        "--append-github-step-summary",
+        help="Append the summary to $GITHUB_STEP_SUMMARY.",
+    ),
+    no_step_summary: bool = typer.Option(
+        False, "--no-step-summary", help="Never write a step summary."
+    ),
+) -> None:
+    """Compare two reports and write a CI evidence bundle.
+
+    Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
+    invalid JSON, or invalid policy).
+    """
+    try:
+        policy = TriagePolicy(fail_on=fail_on)
+    except Exception as exc:  # noqa: BLE001 - invalid policy is a usage error (exit 2)
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    try:
+        triage = RegressionTriageEngine().compare_report_files(
+            baseline_json, current_json, policy
+        )
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:  # noqa: BLE001 - any parse error is a usage error (exit 2)
+        typer.echo(f"error: invalid report: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    bundle = CIEvidenceWriter().write_bundle(
+        triage,
+        evidence_dir,
+        policy=policy.fail_on,
+        json_report_path=json_report,
+        markdown_report_path=markdown_report,
+    )
+
+    typer.echo(triage.summary)
+    typer.echo(f"evidence dir: {bundle.evidence_dir} ({len(bundle.files)} files)")
+
+    if not no_step_summary:
+        if github_step_summary:
+            append_github_step_summary(triage, github_step_summary)
+            typer.echo(f"step summary: {github_step_summary}")
+        elif append_github_step_summary_flag:
+            if append_github_step_summary(triage):
+                typer.echo("step summary: $GITHUB_STEP_SUMMARY")
 
     if not triage.success:
         raise typer.Exit(code=1)

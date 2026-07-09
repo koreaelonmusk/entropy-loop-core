@@ -115,4 +115,5 @@ AI reliability, prevent all regressions, or guarantee correctness.
 
 To explain *what changed* between two runs — new failures vs. fixed vs.
 persistent — diff their JSON reports with `compare-reports`. See
-[regression-triage.md](regression-triage.md).
+[regression-triage.md](regression-triage.md). To attach that as reviewable CI
+evidence, see [ci-evidence.md](ci-evidence.md).

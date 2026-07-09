@@ -1,0 +1,90 @@
+name: "Entropy Loop Core"
+description: >-
+  Compare a baseline and current regression report, write a local CI evidence
+  bundle, and optionally append a step summary. No GitHub API, no token.
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  baseline-report:
+    description: "Path to the baseline regression JSON report."
+    required: true
+  current-report:
+    description: "Path to the current regression JSON report."
+    required: true
+  fail-on:
+    description: "Failure policy: new-failures, any-failures, or never."
+    required: false
+    default: "new-failures"
+  evidence-dir:
+    description: "Directory to write the CI evidence bundle into."
+    required: false
+    default: "entropy-loop-evidence"
+  json-report:
+    description: "Extra path to also write the triage JSON."
+    required: false
+    default: "entropy-loop-evidence/triage.json"
+  markdown-report:
+    description: "Extra path to also write the triage Markdown."
+    required: false
+    default: "entropy-loop-evidence/triage.md"
+  write-step-summary:
+    description: "Append a summary to the GitHub Actions step summary."
+    required: false
+    default: "true"
+  install-package:
+    description: "Install entropy-loop-core from PyPI before running."
+    required: false
+    default: "true"
+  package-version:
+    description: "Specific entropy-loop-core version to install (optional)."
+    required: false
+    default: ""
+  python-command:
+    description: "Python command to use for install and run."
+    required: false
+    default: "python3"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install entropy-loop-core
+      if: ${{ inputs.install-package == 'true' }}
+      shell: bash
+      run: |
+        PACKAGE_VERSION="${{ inputs.package-version }}"
+        PYTHON_COMMAND="${{ inputs.python-command }}"
+
+        # Reproducibility: with no explicit version, pin to the semver tag the
+        # Action is used at (GITHUB_ACTION_REF, e.g. v0.8.0). Branch refs such as
+        # main fall back to the latest published package. No GitHub API, no token.
+        if [ -n "$PACKAGE_VERSION" ]; then
+          PACKAGE_SPEC="entropy-loop-core==$PACKAGE_VERSION"
+        elif echo "${GITHUB_ACTION_REF:-}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+          ACTION_VERSION="${GITHUB_ACTION_REF#v}"
+          PACKAGE_SPEC="entropy-loop-core==$ACTION_VERSION"
+        else
+          PACKAGE_SPEC="entropy-loop-core"
+        fi
+
+        "$PYTHON_COMMAND" -m pip install --upgrade pip
+        "$PYTHON_COMMAND" -m pip install "$PACKAGE_SPEC"
+
+    - name: Write Entropy Loop CI evidence
+      shell: bash
+      run: |
+        ARGS=(
+          "${{ inputs.baseline-report }}"
+          "${{ inputs.current-report }}"
+          --fail-on "${{ inputs.fail-on }}"
+          --evidence-dir "${{ inputs.evidence-dir }}"
+          --json-report "${{ inputs.json-report }}"
+          --markdown-report "${{ inputs.markdown-report }}"
+        )
+        if [ "${{ inputs.write-step-summary }}" = "true" ]; then
+          ARGS+=(--append-github-step-summary)
+        else
+          ARGS+=(--no-step-summary)
+        fi
+        entropy-loop write-ci-evidence "${ARGS[@]}"

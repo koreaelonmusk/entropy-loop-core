@@ -54,7 +54,7 @@ Refresh a pack from a live local agent, explicitly. `AgentCommand`,
 ... -- <command>` — run your agent per case, capture fresh outputs, then gate
 with `run-pack`. Local-only, no shell by default, no secret injection.
 
-## v0.7.0 — Regression triage + baseline diff (in progress)
+## v0.7.0 — Regression triage + baseline diff
 
 Explain what changed between two runs. `CaseTransition`, `RegressionTriage`,
 `TriagePolicy`, `RegressionTriageEngine`, JSON/Markdown triage reports, and
@@ -62,7 +62,15 @@ Explain what changed between two runs. `CaseTransition`, `RegressionTriage`,
 each case as newly failing, fixed, persistent, skipped, or missing, and fail CI
 only on new regressions. Deterministic and local-only; no network, no GitHub API.
 The `run-pack` JSON report now carries a backward-compatible `case_results` list.
-No version bump until a release is cut.
+
+## v0.8.0 — GitHub Action + CI evidence bundle (in progress)
+
+Make adoption a few lines of YAML. `CIEvidenceBundle`, `CIEvidenceWriter`,
+GitHub Actions step-summary helpers, `entropy-loop ci-demo`,
+`entropy-loop write-ci-evidence`, and a first-party composite Action
+(`action.yml`) — compare reports, write a deterministic local evidence bundle,
+and append a step summary. No GitHub API, no PR comments, no artifact uploads, no
+`GITHUB_TOKEN`. No version bump until a release is cut.
 
 ## Later / not now
 

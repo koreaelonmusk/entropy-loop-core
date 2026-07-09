@@ -128,6 +128,14 @@ failure doesn't block unrelated work. It is a deterministic diff of two local
 reports: no network, no GitHub API, no root-cause analysis. See
 [regression-triage.md](regression-triage.md).
 
+## 11. Evidence in CI
+
+An explanation is most useful where the work happens. `CIEvidenceWriter` packages
+a triage into a local, reviewable bundle, and — inside GitHub Actions — appends a
+compact step summary. A first-party composite Action makes adoption a few lines
+of YAML. It reads only `GITHUB_STEP_SUMMARY`, makes no GitHub API calls, requires
+no token, and uploads nothing on its own. See [ci-evidence.md](ci-evidence.md).
+
 ## What this is not
 
 - Not model training or self-improvement of weights.

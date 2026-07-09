@@ -104,6 +104,9 @@ class RegressionTriage(BaseModel):
         default_factory=list, description="Per-case transitions, ordered by case id."
     )
     success: bool = Field(..., description="Whether the triage passes its policy.")
+    policy: str | None = Field(
+        default=None, description="The fail-on policy applied, if recorded."
+    )
     summary: str = Field(..., description="Deterministic one-line summary.")
 
 
@@ -283,6 +286,7 @@ class RegressionTriageEngine:
             missing_count=missing,
             transitions=transitions,
             success=success,
+            policy=policy.fail_on,
             summary=summary,
         )
 

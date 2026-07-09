@@ -133,6 +133,7 @@ entropy-loop memory-demo   # compact repeated failure lessons with a MemoryPolic
 entropy-loop pack-demo     # build, save, load, and run a regression pack
 entropy-loop agent-demo    # refresh a pack from an agent, then run it
 entropy-loop triage-demo   # diff a baseline run against a current run
+entropy-loop ci-demo       # write a CI evidence bundle from a triage
 entropy-loop demo          # run the loop: verify → trace → learn → retry → regress
 entropy-loop doctor        # health-check the install
 ```
@@ -176,6 +177,27 @@ entropy-loop compare-reports reports/baseline.json reports/current.json \
 `compare-reports` classifies each case as newly failing, fixed, persistent, or
 missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
 2 = bad input). See [docs/regression-triage.md](docs/regression-triage.md).
+
+## Use it in GitHub Actions
+
+```yaml
+- name: Compare Entropy Loop reports
+  uses: koreaelonmusk/entropy-loop-core@v0.8.0
+  with:
+    baseline-report: baselines/entropy-loop.json
+    current-report: reports/current.json
+    fail-on: new-failures
+    evidence-dir: reports/entropy-loop-evidence
+    write-step-summary: true
+```
+
+This writes a local CI evidence bundle and can append a summary to the GitHub
+Actions step summary. It does not call the GitHub API, comment on PRs, upload
+artifacts, or require `GITHUB_TOKEN`. See [docs/ci-evidence.md](docs/ci-evidence.md).
+
+When pinned to a semver tag (e.g. `@v0.8.0`) with no `package-version`, the Action
+installs the matching PyPI version (`entropy-loop-core==0.8.0`). On a branch ref
+like `main` it installs the latest; set `package-version` for reproducible CI.
 
 ## What it is / what it is not
 

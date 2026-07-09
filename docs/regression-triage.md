@@ -99,6 +99,9 @@ entropy-loop compare-reports baseline.json current.json \
   level, but produce no per-case transitions; this limitation is reported, not
   hidden.
 
+To package a triage into a reviewable CI evidence bundle and attach a GitHub
+Actions step summary, see [ci-evidence.md](ci-evidence.md).
+
 See also [regression-packs.md](regression-packs.md),
 [agent-adapters.md](agent-adapters.md), and
 [github-actions.md](github-actions.md).
