@@ -240,7 +240,8 @@ calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
-- **v0.8.0** — GitHub Action / CI evidence bundle *(current)*
+- **v0.8.1** — Action runner hardening (self-test) *(current)*
+- **v0.8.0** — GitHub Action / CI evidence bundle
 - **v0.7.0** — regression triage / baseline diff
 - **v0.6.0** — agent adapter / live pack refresh
 - **v0.5.0** — regression packs / CI gate
