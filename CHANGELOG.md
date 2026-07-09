@@ -6,6 +6,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-10
+
+Theme: **CI-native reporter outputs**. Turn AI agent regressions into CI-native
+test reports.
+
 ### Added
 
 - Deterministic JUnit XML reporter for regression triage
@@ -20,13 +25,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - JUnit XML output is intended for CI and test-reporting tools (GitHub Actions,
   GitLab CI, Jenkins, CircleCI, Buildkite, and others). It uses only the
   standard library, escapes XML, and includes no timestamps or hostnames.
+- JUnit XML reports current regression/test state; the `fail-on` policy controls
+  the process exit code. Persistent failures can appear as JUnit `<failure>`
+  entries even when `--fail-on new-failures` exits `0`.
 - Currently-failing cases map to `<failure>` (`new-failure` / `persistent-failure`);
-  resolved and passing cases are passing testcases; legacy reports without
-  per-case data fall back to a single `regression-summary` testcase.
+  resolved and passing cases are passing testcases; missing-in-current cases map
+  to `<skipped>`; legacy reports without per-case data fall back to a single
+  `regression-summary` testcase.
 - The default CI evidence bundle is unchanged; `--junit-report` writes an extra
   file, not into the bundle.
-- This is deterministic report formatting, not root-cause analysis. No GitHub
-  API calls, PR comments, annotations, telemetry, or artifact upload by default.
+- This is deterministic report formatting, not root-cause analysis. No SARIF,
+  GitHub annotations, GitHub API calls, PR comments, telemetry, or artifact
+  upload by default.
 
 ## [0.8.1] - 2026-07-10
 
@@ -321,6 +331,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.9.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.9.0
 [0.8.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.1
 [0.8.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.0
 [0.7.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.7.0
