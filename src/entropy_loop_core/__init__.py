@@ -94,7 +94,7 @@ from .types import (
 )
 from .verification import Rule, VerificationPolicy, Verifier
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "Agent",

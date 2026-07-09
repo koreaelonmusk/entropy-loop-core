@@ -6,9 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-09
+
 Theme: **agent adapter + live pack refresh**. Run your agent, capture the output,
-refresh the pack, gate the regression. *(Version not yet bumped; a release cut
-will set 0.6.0.)*
+refresh the pack, gate the regression.
 
 ### Added
 
@@ -186,6 +187,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.6.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.6.0
 [0.5.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.5.0
 [0.4.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.4.0
 [0.3.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.1
