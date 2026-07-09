@@ -6,9 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-09
+
 Theme: **memory policy + lesson compaction**. Failure memory should not grow
-without bound; v0.4.0 decides what to keep, merge, and drop. *(Version not yet
-bumped; a release cut will set 0.4.0.)*
+without bound; v0.4.0 decides what to keep, merge, and drop.
 
 ### Added
 
@@ -136,6 +137,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.4.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.4.0
 [0.3.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.1
 [0.3.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.3.0
 [0.2.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.2.0
