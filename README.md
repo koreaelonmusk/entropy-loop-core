@@ -182,7 +182,7 @@ missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
 
 ```yaml
 - name: Compare Entropy Loop reports
-  uses: koreaelonmusk/entropy-loop-core@v0.8.0
+  uses: koreaelonmusk/entropy-loop-core@v0.8.1
   with:
     baseline-report: baselines/entropy-loop.json
     current-report: reports/current.json
