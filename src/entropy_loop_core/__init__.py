@@ -22,6 +22,17 @@ The public API is intentionally small:
 
 from __future__ import annotations
 
+from .agent_adapter import (
+    AgentAdapter,
+    AgentCommand,
+    AgentRunInput,
+    AgentRunResult,
+    CommandAgentAdapter,
+    PackRefreshResult,
+    RegressionPackRefresher,
+    export_refresh_report,
+    write_refresh_report,
+)
 from .evaluation import summarize
 from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
@@ -87,7 +98,12 @@ __version__ = "0.5.0"
 
 __all__ = [
     "Agent",
+    "AgentAdapter",
+    "AgentCommand",
     "AgentOutput",
+    "AgentRunInput",
+    "AgentRunResult",
+    "CommandAgentAdapter",
     "CompactionResult",
     "EntropyLoop",
     "EvaluationSummary",
@@ -100,8 +116,10 @@ __all__ = [
     "LoopResult",
     "MemoryPolicy",
     "MemoryStore",
+    "PackRefreshResult",
     "RegressionCase",
     "RegressionPack",
+    "RegressionPackRefresher",
     "RegressionPackResult",
     "RegressionPackRunner",
     "RegressionReport",
@@ -119,6 +137,7 @@ __all__ = [
     "export_compaction_result",
     "export_json_report",
     "export_junit_report",
+    "export_refresh_report",
     "export_lesson_memory",
     "export_memory_policy",
     "export_regression_case",
@@ -141,5 +160,6 @@ __all__ = [
     "summarize",
     "write_json_report",
     "write_junit_report",
+    "write_refresh_report",
     "__version__",
 ]

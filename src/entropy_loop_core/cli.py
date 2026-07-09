@@ -15,6 +15,13 @@ from pathlib import Path
 
 import typer
 
+from .agent_adapter import (
+    AgentCommand,
+    AgentRunResult,
+    CommandAgentAdapter,
+    RegressionPackRefresher,
+    write_refresh_report,
+)
 from .evaluation import summarize
 from .lessons import LessonGenerator
 from .loop import EntropyLoop
@@ -299,6 +306,92 @@ def run_pack(
     if junit_report:
         write_junit_report(result, junit_report)
         typer.echo(f"junit report: {junit_report}")
+
+    if not result.success:
+        raise typer.Exit(code=1)
+
+
+class _DemoAdapter:
+    """An in-process, deterministic adapter for `agent-demo` (no subprocess)."""
+
+    def run_case(self, case: RegressionCase) -> AgentRunResult:
+        content = f'{{"case": "{case.name}", "ok": true}}'
+        return AgentRunResult(
+            case_id=case.name, exit_code=0, output=content, stdout=content, success=True
+        )
+
+
+@app.command(name="agent-demo")
+def agent_demo() -> None:
+    """Refresh a pack with a deterministic in-process agent, then run it."""
+    pack = _demo_pack().model_copy(update={"outputs": {}})
+    typer.echo("Entropy Loop Agent Demo")
+    typer.echo(f"1. Pack: {pack.name}")
+    typer.echo(f"2. Cases: {len(pack.cases)}")
+
+    refreshed_pack, refresh = RegressionPackRefresher().refresh_pack(
+        pack, _DemoAdapter()
+    )
+    typer.echo("3. Agent adapter ran")
+    typer.echo(f"4. Refreshed: {refresh.refreshed_count}")
+    typer.echo(f"5. Failed: {refresh.failed_count}")
+
+    result = RegressionPackRunner().run_pack(refreshed_pack)
+    typer.echo("6. Pack run complete")
+    typer.echo(f"7. Passed: {result.passed_count}")
+    typer.echo("8. Result: live pack refresh ready for CI")
+
+    if not (refresh.success and result.success):
+        raise typer.Exit(code=1)
+
+
+# Module-level singleton so the variadic default is not a call in the signature.
+_AGENT_COMMAND_ARG = typer.Argument(
+    None, help="Agent command after `--`, e.g. -- python my_agent.py"
+)
+
+
+@app.command(name="refresh-pack")
+def refresh_pack(
+    input_pack: str = typer.Argument(..., help="Path to the input pack JSON."),
+    output_pack: str = typer.Argument(..., help="Path to write the refreshed pack."),
+    command: list[str] = _AGENT_COMMAND_ARG,
+    json_report: str = typer.Option(
+        None, "--json-report", help="Write a refresh JSON report to this path."
+    ),
+    fail_fast: bool = typer.Option(
+        False, "--fail-fast", help="Stop at the first failing agent run."
+    ),
+    timeout: int = typer.Option(30, "--timeout", help="Per-case timeout (seconds)."),
+) -> None:
+    """Run a local agent command per case and write a refreshed pack.
+
+    Exit 0 = all cases refreshed, 1 = an agent run failed, 2 = bad input.
+    Pass the agent command after `--`.
+    """
+    if not command:
+        typer.echo("error: no agent command given (use `-- <command>`)", err=True)
+        raise typer.Exit(code=2)
+    if not Path(input_pack).is_file():
+        typer.echo(f"error: input pack not found: {input_pack}", err=True)
+        raise typer.Exit(code=2)
+    try:
+        load_regression_pack(input_pack)
+        agent_command = AgentCommand(argv=list(command), timeout_seconds=timeout)
+    except Exception as exc:  # noqa: BLE001 - any input error is a usage error (exit 2)
+        typer.echo(f"error: invalid input: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    adapter = CommandAgentAdapter(agent_command)
+    result = RegressionPackRefresher().refresh_pack_file(
+        input_pack, output_pack, adapter, fail_fast=fail_fast
+    )
+    typer.echo(result.summary)
+    typer.echo(f"refreshed pack: {output_pack}")
+
+    if json_report:
+        write_refresh_report(result, json_report)
+        typer.echo(f"json report: {json_report}")
 
     if not result.success:
         raise typer.Exit(code=1)

@@ -41,11 +41,18 @@ Decide what to remember, group, and forget. `MemoryPolicy`, `LessonCompactor`,
 `entropy-loop memory-demo` — deterministic lesson deduplication (by fingerprint
 or category), minimum-occurrence and count caps, and drop-empty hygiene.
 
-## v0.5.0 — Regression pack + CI gate (in progress)
+## v0.5.0 — Regression pack + CI gate
 
 Turn agent failures into portable CI checks. `RegressionPack`,
 `RegressionPackRunner`, JSON/JUnit reports, and `entropy-loop run-pack` with
-stable exit codes (0/1/2) so a reappearing regression fails the build. No version
+stable exit codes (0/1/2) so a reappearing regression fails the build.
+
+## v0.6.0 — Agent adapter + live pack refresh (in progress)
+
+Refresh a pack from a live local agent, explicitly. `AgentCommand`,
+`CommandAgentAdapter`, `RegressionPackRefresher`, and `entropy-loop refresh-pack
+... -- <command>` — run your agent per case, capture fresh outputs, then gate
+with `run-pack`. Local-only, no shell by default, no secret injection. No version
 bump until a release is cut.
 
 ## Later / not now

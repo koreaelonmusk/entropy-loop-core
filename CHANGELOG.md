@@ -6,6 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Theme: **agent adapter + live pack refresh**. Run your agent, capture the output,
+refresh the pack, gate the regression. *(Version not yet bumped; a release cut
+will set 0.6.0.)*
+
+### Added
+
+- `AgentCommand`, `AgentRunInput`, `AgentRunResult`, `AgentAdapter` protocol, and
+  `CommandAgentAdapter` (explicit local subprocess, no shell by default, timeout,
+  minimal environment).
+- `PackRefreshResult` and `RegressionPackRefresher` (`refresh_pack`,
+  `refresh_pack_file`).
+- Refresh JSON report helpers (`export_refresh_report`, `write_refresh_report`).
+- `entropy-loop agent-demo` and `entropy-loop refresh-pack INPUT OUTPUT
+  -- <command>` (exit codes: 0 refreshed, 1 agent-run failure, 2 bad input;
+  optional `--json-report`, `--fail-fast`, `--timeout`).
+- `examples/json_agent_agent.py`, `examples/agent_adapter_ci.py`, and
+  `docs/agent-adapters.md`.
+
+### Safety
+
+- Entropy Loop Core runs a command only when explicitly given one; no implicit
+  execution, no auto-discovery, no shell by default, no secret injection.
+- The library makes no network calls; deterministic given adapter outputs.
+
 ## [0.5.0] - 2026-07-09
 
 Theme: **regression pack + CI gate**. Turn captured agent failures into portable

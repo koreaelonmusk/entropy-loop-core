@@ -119,6 +119,15 @@ outputs into a portable JSON file. `RegressionPackRunner` replays it (reusing
 writers. The CLI `entropy-loop run-pack` returns stable exit codes (0/1/2) so a
 reappearing regression fails CI. See [regression-packs.md](regression-packs.md).
 
+### `agent_adapter.py` — `CommandAgentAdapter`, `RegressionPackRefresher`
+
+An `AgentAdapter` produces a candidate output for a case; `CommandAgentAdapter`
+does so by running an explicit local `AgentCommand` (subprocess, no shell,
+timeout, minimal env). `RegressionPackRefresher` refreshes a pack's outputs from
+an adapter into a new pack. The CLI `entropy-loop refresh-pack ... -- <command>`
+runs your agent and writes a refreshed pack for `run-pack` to gate. See
+[agent-adapters.md](agent-adapters.md).
+
 ### `evaluation.py` — `summarize`
 
 A pure function that rolls a `LoopResult` (and any generated regression cases)

@@ -102,6 +102,12 @@ and reference outputs into a portable file that runs in CI via
 `entropy-loop run-pack`, with stable exit codes so a reappearing regression fails
 the build. See [regression-packs.md](regression-packs.md).
 
+To gate on an agent's *current* behavior, `refresh-pack` runs an explicit local
+agent command per case and captures fresh outputs into a new pack, which
+`run-pack` then verifies. Entropy Loop Core runs the command only when you pass
+it — no shell, no secret injection, no network calls from the library. See
+[agent-adapters.md](agent-adapters.md).
+
 ## 9. Memory hygiene
 
 Generating a lesson per failure is only useful until memory fills with
