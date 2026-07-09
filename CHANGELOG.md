@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A GitHub Actions self-test workflow (`.github/workflows/action-self-test.yml`)
+  that dogfoods the first-party composite Action on GitHub-hosted runners.
+
+### Notes
+
+- The self-test workflow verifies local Action execution (`uses: ./`), evidence
+  bundle creation, step-summary behavior, and `write-ci-evidence` policy exit
+  codes, plus an optional smoke test of the published `v0.8.0` Action.
+- This is Action runner hardening only. It does not change the public Python API.
+
 ## [0.8.0] - 2026-07-10
 
 Theme: **GitHub Action + CI evidence bundle**. From regression reports to CI
