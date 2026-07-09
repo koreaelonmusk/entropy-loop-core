@@ -1,0 +1,157 @@
+name: Action Self Test
+
+# Dogfood the first-party composite Action on real GitHub-hosted runners:
+# verify the Action runs, writes a deterministic evidence bundle, appends a step
+# summary, and that write-ci-evidence keeps its policy exit codes. Runner
+# hardening only — no GitHub API, no token, no artifact upload.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-action-self-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install local package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run local Entropy Loop Action
+        uses: ./
+        with:
+          baseline-report: examples/baseline_regression_report.json
+          current-report: examples/current_regression_report.json
+          fail-on: never
+          evidence-dir: reports/entropy-loop-evidence
+          write-step-summary: true
+          install-package: false
+
+      - name: Verify evidence bundle
+        run: |
+          dir=reports/entropy-loop-evidence
+          test -f "$dir/triage.json"
+          test -f "$dir/triage.md"
+          test -f "$dir/summary.txt"
+          test -f "$dir/manifest.json"
+          # Stable strings guaranteed by the writer (fail-on never => policy: never).
+          grep -q "Entropy Loop CI evidence" "$dir/summary.txt"
+          grep -q "policy: never" "$dir/summary.txt"
+          grep -q "triage.json" "$dir/manifest.json"
+
+      - name: Verify step summary generation
+        run: |
+          # $GITHUB_STEP_SUMMARY is per-step, so the Action's summary is not
+          # readable here. Instead verify the same append code path via an
+          # explicit path — deterministic and independent of the runner's file.
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on never \
+            --evidence-dir /tmp/self-test-evidence \
+            --github-step-summary /tmp/self-test-step-summary.md
+          test -f /tmp/self-test-step-summary.md
+          grep -q "Entropy Loop" /tmp/self-test-step-summary.md
+          grep -q "regression triage" /tmp/self-test-step-summary.md
+
+  cli-policy-self-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install local package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: ci-demo exits 0
+        run: entropy-loop ci-demo
+
+      - name: Verify write-ci-evidence exit codes
+        run: |
+          set +e
+
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on new-failures \
+            --evidence-dir /tmp/entropy-loop-evidence-new
+          code=$?
+          test "$code" -eq 1 || exit 10
+
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/baseline_regression_report.json \
+            --fail-on new-failures \
+            --evidence-dir /tmp/entropy-loop-evidence-pass
+          code=$?
+          test "$code" -eq 0 || exit 11
+
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on never \
+            --evidence-dir /tmp/entropy-loop-evidence-never
+          code=$?
+          test "$code" -eq 0 || exit 12
+
+          entropy-loop write-ci-evidence missing.json examples/current_regression_report.json
+          code=$?
+          test "$code" -eq 2 || exit 13
+
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on invalid-policy
+          code=$?
+          test "$code" -eq 2 || exit 14
+
+          set -e
+
+  published-action-smoke:
+    # Tests the already-released Action as a consumer would use it. Skipped on
+    # pull_request to avoid fork/PyPI flakiness; runs on push to main and manual
+    # dispatch.
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run published Entropy Loop Action
+        uses: koreaelonmusk/entropy-loop-core@v0.8.0
+        with:
+          baseline-report: examples/baseline_regression_report.json
+          current-report: examples/current_regression_report.json
+          fail-on: never
+          evidence-dir: reports/published-entropy-loop-evidence
+          write-step-summary: true
+          package-version: "0.8.0"
+
+      - name: Verify published evidence bundle
+        run: |
+          dir=reports/published-entropy-loop-evidence
+          test -f "$dir/triage.json"
+          test -f "$dir/triage.md"
+          test -f "$dir/summary.txt"
+          test -f "$dir/manifest.json"

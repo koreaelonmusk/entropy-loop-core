@@ -108,6 +108,16 @@ per-case lines in the step summary) will be empty; the counts and result still
 render. For accurate per-case evidence, regenerate baselines with v0.7.0 or
 later. See [regression-triage.md](regression-triage.md).
 
+## Self-test
+
+The repository dogfoods its own Action: `.github/workflows/action-self-test.yml`
+runs the composite Action from the current checkout (`uses: ./`) on a
+GitHub-hosted runner, verifies the evidence bundle and step summary, and asserts
+the `write-ci-evidence` policy exit codes (0/1/2). A separate job smoke-tests the
+published `v0.8.0` Action as a consumer would use it. The workflow uses
+least-privilege `permissions: contents: read` — no `GITHUB_TOKEN`, no GitHub API,
+no artifact upload.
+
 ## Boundary
 
 - Local files only; explicit paths only.
