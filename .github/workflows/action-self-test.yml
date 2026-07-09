@@ -42,6 +42,7 @@ jobs:
           current-report: examples/current_regression_report.json
           fail-on: never
           evidence-dir: reports/entropy-loop-evidence
+          junit-report: reports/entropy-loop-junit.xml
           write-step-summary: true
           install-package: false
 
@@ -56,6 +57,17 @@ jobs:
           grep -q "Entropy Loop CI evidence" "$dir/summary.txt"
           grep -q "policy: never" "$dir/summary.txt"
           grep -q "triage.json" "$dir/manifest.json"
+
+      - name: Verify JUnit XML report
+        run: |
+          test -f reports/entropy-loop-junit.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("reports/entropy-loop-junit.xml").getroot()
+          assert root.tag == "testsuites", root.tag
+          assert root.find("testsuite") is not None
+          print("junit xml ok")
+          PY
 
       - name: Verify step summary generation
         run: |

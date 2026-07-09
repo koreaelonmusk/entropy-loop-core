@@ -29,6 +29,10 @@ inputs:
     description: "Extra path to also write the triage Markdown."
     required: false
     default: "entropy-loop-evidence/triage.md"
+  junit-report:
+    description: "Optional path to write a JUnit XML report. Empty means none."
+    required: false
+    default: ""
   write-step-summary:
     description: "Append a summary to the GitHub Actions step summary."
     required: false
@@ -82,6 +86,9 @@ runs:
           --json-report "${{ inputs.json-report }}"
           --markdown-report "${{ inputs.markdown-report }}"
         )
+        if [ -n "${{ inputs.junit-report }}" ]; then
+          ARGS+=(--junit-report "${{ inputs.junit-report }}")
+        fi
         if [ "${{ inputs.write-step-summary }}" = "true" ]; then
           ARGS+=(--append-github-step-summary)
         else

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -12,8 +13,10 @@ from entropy_loop_core import (
     RegressionTriageEngine,
     TriagePolicy,
     export_regression_triage,
+    export_regression_triage_junit_xml,
     export_regression_triage_markdown,
     write_regression_triage_json,
+    write_regression_triage_junit_xml,
     write_regression_triage_markdown,
 )
 
@@ -276,3 +279,97 @@ def test_write_markdown_report(tmp_path) -> None:
 
 def triage_from(base: dict, curr: dict) -> RegressionTriage:
     return RegressionTriageEngine().compare_reports(base, curr)
+
+
+# --- JUnit XML ------------------------------------------------------------
+
+
+def _mixed_triage() -> RegressionTriage:
+    base = _report(
+        "p",
+        {"a": ("passed", None), "b": ("failed", "boom"), "c": ("passed", None)},
+    )
+    curr = _report(
+        "p",
+        {"a": ("failed", "now broke"), "b": ("failed", "boom"), "c": ("passed", None)},
+    )
+    return RegressionTriageEngine().compare_reports(base, curr, TriagePolicy())
+
+
+def test_junit_is_valid_xml() -> None:
+    xml = export_regression_triage_junit_xml(_mixed_triage())
+    root = ET.fromstring(xml)
+    assert root.tag == "testsuites"
+    suite = root.find("testsuite")
+    assert suite is not None
+    assert suite.get("name") == "entropy-loop"
+
+
+def test_junit_counts_match_elements() -> None:
+    root = ET.fromstring(export_regression_triage_junit_xml(_mixed_triage()))
+    suite = root.find("testsuite")
+    cases = suite.findall("testcase")
+    failures = [c for c in cases if c.find("failure") is not None]
+    assert suite.get("tests") == "3"
+    assert suite.get("failures") == "2"
+    assert suite.get("errors") == "0"
+    assert len(cases) == 3
+    assert len(failures) == 2
+
+
+def test_junit_new_failure_type() -> None:
+    root = ET.fromstring(export_regression_triage_junit_xml(_mixed_triage()))
+    a = next(c for c in root.iter("testcase") if c.get("name") == "a")
+    assert a.find("failure").get("type") == "new-failure"
+    b = next(c for c in root.iter("testcase") if c.get("name") == "b")
+    assert b.find("failure").get("type") == "persistent-failure"
+
+
+def test_junit_resolved_case_passes() -> None:
+    # 'c' passed in both -> passing testcase with no failure child.
+    root = ET.fromstring(export_regression_triage_junit_xml(_mixed_triage()))
+    c = next(tc for tc in root.iter("testcase") if tc.get("name") == "c")
+    assert c.find("failure") is None
+
+
+def test_junit_is_deterministic() -> None:
+    a = export_regression_triage_junit_xml(_mixed_triage())
+    b = export_regression_triage_junit_xml(_mixed_triage())
+    assert a == b
+
+
+def test_junit_escapes_special_characters() -> None:
+    base = _report("p", {"x&y": ("passed", None)})
+    curr = _report("p", {"x&y": ("failed", 'a < b & c > d "q"')})
+    triage = RegressionTriageEngine().compare_reports(base, curr)
+    xml = export_regression_triage_junit_xml(triage)
+    # Parses despite special chars, and raw ampersand is escaped.
+    root = ET.fromstring(xml)
+    case = next(tc for tc in root.iter("testcase") if tc.get("name") == "x&y")
+    assert "a < b & c > d" in case.find("failure").get("message")
+    assert "&amp;" in xml
+
+
+def test_junit_has_no_timestamps() -> None:
+    xml = export_regression_triage_junit_xml(_mixed_triage())
+    assert "timestamp" not in xml
+    assert "2026" not in xml
+
+
+def test_junit_legacy_report_does_not_crash() -> None:
+    # No case_results -> aggregate summary testcase; still valid XML.
+    triage = RegressionTriageEngine().compare_reports(
+        {"pack": "p"}, {"pack": "p"}, TriagePolicy()
+    )
+    root = ET.fromstring(export_regression_triage_junit_xml(triage))
+    cases = root.find("testsuite").findall("testcase")
+    assert len(cases) == 1
+    assert cases[0].get("name") == "regression-summary"
+
+
+def test_junit_writer_matches_exporter(tmp_path) -> None:
+    triage = _mixed_triage()
+    path = tmp_path / "out" / "junit.xml"
+    write_regression_triage_junit_xml(triage, path)
+    assert path.exists()
+    assert path.read_text() == export_regression_triage_junit_xml(triage)

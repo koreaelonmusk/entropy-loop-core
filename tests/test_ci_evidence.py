@@ -219,3 +219,18 @@ def test_action_yml_branch_ref_falls_back_to_latest() -> None:
 def test_action_yml_explicit_version_takes_precedence() -> None:
     text = ACTION_YML.read_text()
     assert "entropy-loop-core==$PACKAGE_VERSION" in text
+
+
+def test_action_yml_has_junit_report_input() -> None:
+    assert "junit-report:" in ACTION_YML.read_text()
+
+
+def test_action_yml_junit_passthrough_is_conditional() -> None:
+    text = ACTION_YML.read_text()
+    # Only pass --junit-report when the input is non-empty.
+    assert 'if [ -n "${{ inputs.junit-report }}" ]' in text
+    assert "--junit-report" in text
+
+
+def test_action_yml_no_artifact_upload() -> None:
+    assert "upload-artifact" not in ACTION_YML.read_text()

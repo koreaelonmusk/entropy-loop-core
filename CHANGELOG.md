@@ -6,6 +6,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Deterministic JUnit XML reporter for regression triage
+  (`export_regression_triage_junit_xml`, `write_regression_triage_junit_xml`).
+- `--junit-report` on `entropy-loop compare-reports` and
+  `entropy-loop write-ci-evidence`.
+- Optional `junit-report` input on the GitHub Action.
+- Action self-test coverage that writes and parses a JUnit report.
+
+### Notes
+
+- JUnit XML output is intended for CI and test-reporting tools (GitHub Actions,
+  GitLab CI, Jenkins, CircleCI, Buildkite, and others). It uses only the
+  standard library, escapes XML, and includes no timestamps or hostnames.
+- Currently-failing cases map to `<failure>` (`new-failure` / `persistent-failure`);
+  resolved and passing cases are passing testcases; legacy reports without
+  per-case data fall back to a single `regression-summary` testcase.
+- The default CI evidence bundle is unchanged; `--junit-report` writes an extra
+  file, not into the bundle.
+- This is deterministic report formatting, not root-cause analysis. No GitHub
+  API calls, PR comments, annotations, telemetry, or artifact upload by default.
+
 ## [0.8.1] - 2026-07-10
 
 Theme: **Action runner hardening**. The Action now tests itself.

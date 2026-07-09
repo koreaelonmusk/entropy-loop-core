@@ -67,3 +67,11 @@ def test_no_write_permissions() -> None:
     assert "issues: write" not in text
     assert "id-token: write" not in text
     assert "packages: write" not in text
+
+
+def test_workflow_exercises_junit() -> None:
+    text = _text()
+    # The local Action self-test requests a JUnit report and verifies it parses.
+    assert "junit-report: reports/entropy-loop-junit.xml" in text
+    assert "reports/entropy-loop-junit.xml" in text
+    assert "xml.etree.ElementTree" in text

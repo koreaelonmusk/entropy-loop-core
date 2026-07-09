@@ -46,6 +46,7 @@ from .triage import (
     RegressionTriageEngine,
     TriagePolicy,
     write_regression_triage_json,
+    write_regression_triage_junit_xml,
     write_regression_triage_markdown,
 )
 from .types import (
@@ -468,6 +469,9 @@ def compare_reports(
     markdown_report: str = typer.Option(
         None, "--markdown-report", help="Write a triage Markdown report to this path."
     ),
+    junit_report: str = typer.Option(
+        None, "--junit-report", help="Write a triage JUnit XML report to this path."
+    ),
     fail_on: str = typer.Option(
         "new-failures",
         "--fail-on",
@@ -477,7 +481,7 @@ def compare_reports(
     """Diff a baseline report against a current one and explain what changed.
 
     Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
-    invalid JSON, or invalid policy).
+    invalid JSON, invalid policy, or report write error).
     """
     try:
         policy = TriagePolicy(fail_on=fail_on)
@@ -504,6 +508,13 @@ def compare_reports(
     if markdown_report:
         write_regression_triage_markdown(triage, markdown_report)
         typer.echo(f"markdown report: {markdown_report}")
+    if junit_report:
+        try:
+            write_regression_triage_junit_xml(triage, junit_report)
+        except OSError as exc:
+            typer.echo(f"error: cannot write junit report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"junit report: {junit_report}")
 
     if not triage.success:
         raise typer.Exit(code=1)
@@ -573,6 +584,9 @@ def write_ci_evidence(
     markdown_report: str = typer.Option(
         None, "--markdown-report", help="Also write the triage Markdown to this path."
     ),
+    junit_report: str = typer.Option(
+        None, "--junit-report", help="Also write a triage JUnit XML report here."
+    ),
     github_step_summary: str = typer.Option(
         None, "--github-step-summary", help="Append the step summary to this path."
     ),
@@ -588,7 +602,8 @@ def write_ci_evidence(
     """Compare two reports and write a CI evidence bundle.
 
     Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
-    invalid JSON, or invalid policy).
+    invalid JSON, invalid policy, or report write error). The default evidence
+    bundle is unchanged; ``--junit-report`` writes an extra file, not into it.
     """
     try:
         policy = TriagePolicy(fail_on=fail_on)
@@ -617,6 +632,14 @@ def write_ci_evidence(
 
     typer.echo(triage.summary)
     typer.echo(f"evidence dir: {bundle.evidence_dir} ({len(bundle.files)} files)")
+
+    if junit_report:
+        try:
+            write_regression_triage_junit_xml(triage, junit_report)
+        except OSError as exc:
+            typer.echo(f"error: cannot write junit report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"junit report: {junit_report}")
 
     if not no_step_summary:
         if github_step_summary:
