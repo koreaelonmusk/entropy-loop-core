@@ -6,17 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-10
+
+Theme: **Action runner hardening**. The Action now tests itself.
+
 ### Added
 
 - A GitHub Actions self-test workflow (`.github/workflows/action-self-test.yml`)
   that dogfoods the first-party composite Action on GitHub-hosted runners.
+- Local Action self-test coverage using `uses: ./`.
+- CI policy exit-code self-test coverage for `write-ci-evidence`.
 
 ### Notes
 
 - The self-test workflow verifies local Action execution (`uses: ./`), evidence
   bundle creation, step-summary behavior, and `write-ci-evidence` policy exit
-  codes, plus an optional smoke test of the published `v0.8.0` Action.
+  codes (`1`/`0`/`0`/`2`/`2`), plus a smoke test of the published `v0.8.0` Action
+  that is skipped on pull requests to avoid fork and package-availability
+  flakiness.
 - This is Action runner hardening only. It does not change the public Python API.
+- No GitHub API calls, PR comments, required `GITHUB_TOKEN`, telemetry, hidden
+  persistence, or artifact upload by default.
 
 ## [0.8.0] - 2026-07-10
 
@@ -289,6 +299,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.8.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.1
 [0.8.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.0
 [0.7.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.7.0
 [0.6.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.6.0
