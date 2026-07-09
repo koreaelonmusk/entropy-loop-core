@@ -57,11 +57,18 @@ jobs:
           grep -q "policy: never" "$dir/summary.txt"
           grep -q "triage.json" "$dir/manifest.json"
 
-      - name: Verify step summary was appended
+      - name: Verify step summary generation
         run: |
-          test -n "${GITHUB_STEP_SUMMARY:-}"
-          test -f "$GITHUB_STEP_SUMMARY"
-          grep -q "Entropy Loop" "$GITHUB_STEP_SUMMARY"
+          # $GITHUB_STEP_SUMMARY is per-step, so the Action's summary is not
+          # readable here. Instead verify the same append code path via an
+          # explicit path — deterministic and independent of the runner's file.
+          entropy-loop write-ci-evidence examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on never \
+            --evidence-dir /tmp/self-test-evidence \
+            --github-step-summary /tmp/self-test-step-summary.md
+          test -f /tmp/self-test-step-summary.md
+          grep -q "Entropy Loop" /tmp/self-test-step-summary.md
+          grep -q "regression triage" /tmp/self-test-step-summary.md
 
   cli-policy-self-test:
     runs-on: ubuntu-latest
