@@ -108,6 +108,37 @@ per-case lines in the step summary) will be empty; the counts and result still
 render. For accurate per-case evidence, regenerate baselines with v0.7.0 or
 later. See [regression-triage.md](regression-triage.md).
 
+## JUnit XML for CI-native reporting
+
+Many CI systems and test-reporting tools (GitHub Actions, GitLab CI, Jenkins,
+CircleCI, Buildkite, and others) read **JUnit XML**. `--junit-report` writes a
+deterministic JUnit file so they can consume Entropy Loop regression results as
+test reports — no custom parsing.
+
+```bash
+entropy-loop write-ci-evidence baselines/entropy-loop.json reports/current.json \
+  --fail-on new-failures \
+  --evidence-dir reports/entropy-loop-evidence \
+  --junit-report reports/entropy-loop-junit.xml
+```
+
+`compare-reports` accepts `--junit-report` too, and it can be combined with
+`--json-report` and `--markdown-report`. The GitHub Action exposes an optional
+`junit-report` input that maps to the same flag (empty means no JUnit file).
+
+Mapping (transition state only — no root-cause claims):
+
+- currently-failing cases → `<failure>` with type `new-failure` or
+  `persistent-failure`,
+- resolved and passing cases → passing `<testcase>`,
+- skipped or missing cases → `<skipped>`,
+- legacy reports without per-case data → a single `regression-summary` testcase.
+
+The output uses only the standard library, escapes XML, and contains no
+timestamps or hostnames, so it is byte-identical across runs on the same input.
+`--junit-report` writes an extra file; it does **not** change the default 4-file
+evidence bundle.
+
 ## Self-test
 
 The repository dogfoods its own Action: `.github/workflows/action-self-test.yml`

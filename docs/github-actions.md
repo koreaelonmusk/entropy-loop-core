@@ -150,6 +150,7 @@ jobs:
           current-report: reports/current.json
           fail-on: new-failures
           evidence-dir: reports/entropy-loop-evidence
+          junit-report: reports/entropy-loop-junit.xml
           write-step-summary: true
 
       - name: Upload Entropy Loop evidence
@@ -166,6 +167,8 @@ Notes:
   `GITHUB_TOKEN`.
 - The Action does not upload artifacts by itself — add `actions/upload-artifact`
   explicitly if you want them.
+- The optional `junit-report` input writes a deterministic JUnit XML file that
+  test reporters can consume; leave it empty to skip it.
 - `run-pack` may exit `1` when failures exist, so CI examples may use `|| true`
   before the Action; `write-ci-evidence` then decides whether the job fails,
   based on `fail-on`.

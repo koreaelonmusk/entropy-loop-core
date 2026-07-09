@@ -299,6 +299,50 @@ def test_compare_reports_writes_reports(tmp_path) -> None:
     assert jp.exists() and mp.exists()
 
 
+def test_compare_reports_writes_junit(tmp_path) -> None:
+    import xml.etree.ElementTree as ET
+
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    xp = tmp_path / "out" / "triage.xml"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app,
+        ["compare-reports", str(base), str(curr), "--junit-report", str(xp)],
+    )
+    assert result.exit_code == 1  # new failure under default policy
+    assert xp.exists()
+    root = ET.parse(xp).getroot()
+    assert root.tag == "testsuites"
+
+
+def test_compare_reports_junit_combines_with_json_markdown(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    jp = tmp_path / "r.json"
+    mp = tmp_path / "r.md"
+    xp = tmp_path / "r.xml"
+    result = runner.invoke(
+        app,
+        [
+            "compare-reports",
+            str(base),
+            str(curr),
+            "--json-report",
+            str(jp),
+            "--markdown-report",
+            str(mp),
+            "--junit-report",
+            str(xp),
+        ],
+    )
+    assert result.exit_code == 0
+    assert jp.exists() and mp.exists() and xp.exists()
+
+
 def test_ci_demo_runs() -> None:
     result = runner.invoke(app, ["ci-demo"])
     assert result.exit_code == 0
@@ -337,6 +381,39 @@ def test_write_ci_evidence_exit_0_when_passing(tmp_path) -> None:
         ],
     )
     assert result.exit_code == 0
+
+
+def test_write_ci_evidence_writes_junit_outside_bundle(tmp_path) -> None:
+    import xml.etree.ElementTree as ET
+
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    ev = tmp_path / "evidence"
+    xp = tmp_path / "junit.xml"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(ev),
+            "--junit-report",
+            str(xp),
+        ],
+    )
+    assert result.exit_code == 1  # new failure
+    # JUnit written, but the default bundle is still exactly 4 files.
+    assert xp.exists()
+    ET.parse(xp)
+    assert sorted(p.name for p in ev.iterdir()) == [
+        "manifest.json",
+        "summary.txt",
+        "triage.json",
+        "triage.md",
+    ]
 
 
 def test_write_ci_evidence_never_policy(tmp_path) -> None:

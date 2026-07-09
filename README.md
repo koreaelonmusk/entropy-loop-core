@@ -188,12 +188,15 @@ missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
     current-report: reports/current.json
     fail-on: new-failures
     evidence-dir: reports/entropy-loop-evidence
+    junit-report: reports/entropy-loop-junit.xml
     write-step-summary: true
 ```
 
 This writes a local CI evidence bundle and can append a summary to the GitHub
-Actions step summary. It does not call the GitHub API, comment on PRs, upload
-artifacts, or require `GITHUB_TOKEN`. See [docs/ci-evidence.md](docs/ci-evidence.md).
+Actions step summary. The optional `junit-report` emits a deterministic JUnit XML
+file that GitHub Actions, GitLab CI, Jenkins, CircleCI, and other test reporters
+can consume. It does not call the GitHub API, comment on PRs, upload artifacts, or
+require `GITHUB_TOKEN`. See [docs/ci-evidence.md](docs/ci-evidence.md).
 
 When pinned to a semver tag (e.g. `@v0.8.0`) with no `package-version`, the Action
 installs the matching PyPI version (`entropy-loop-core==0.8.0`). On a branch ref

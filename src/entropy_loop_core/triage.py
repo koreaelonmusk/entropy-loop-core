@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape, quoteattr
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -418,3 +419,103 @@ def write_regression_triage_markdown(
     if target.parent != Path(""):
         target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(export_regression_triage_markdown(triage), encoding="utf-8")
+
+
+# --- JUnit XML ------------------------------------------------------------
+
+_JUNIT_CLASSNAME = "entropy-loop.regression"
+
+
+def _failure_type(transition: str) -> str:
+    """Map a transition to a stable JUnit failure type."""
+    if transition == "new_failure":
+        return "new-failure"
+    if transition == "persistent_failure":
+        return "persistent-failure"
+    return "regression"
+
+
+def _testcase_xml(transition: CaseTransition) -> list[str]:
+    """Render one JUnit ``<testcase>`` for a transition, keyed by case id.
+
+    A currently-failing case becomes a ``<failure>``; a skipped or missing case
+    becomes ``<skipped>``; anything else is a passing testcase. Transition state
+    only — no root-cause claims.
+    """
+    name = quoteattr(transition.case_id)
+    classname = quoteattr(_JUNIT_CLASSNAME)
+    status = transition.current_status
+    if status == "failed":
+        ftype = quoteattr(_failure_type(transition.transition))
+        message = quoteattr(transition.current_message or transition.summary)
+        return [
+            f"    <testcase classname={classname} name={name}>",
+            f"      <failure type={ftype} message={message}>"
+            f"{escape(transition.summary)}</failure>",
+            "    </testcase>",
+        ]
+    if status in ("skipped", "missing"):
+        reason = (
+            "missing in current report" if status == "missing" else transition.summary
+        )
+        return [
+            f"    <testcase classname={classname} name={name}>",
+            f"      <skipped message={quoteattr(reason)}/>",
+            "    </testcase>",
+        ]
+    return [f"    <testcase classname={classname} name={name}/>"]
+
+
+def export_regression_triage_junit_xml(triage: RegressionTriage) -> str:
+    """Render a triage as deterministic JUnit XML.
+
+    Uses only the standard library, escapes XML, and includes no timestamps,
+    hostnames, or nondeterministic ordering (cases follow the triage's stable
+    case-id order). Legacy reports without per-case data fall back to a single
+    aggregate ``regression-summary`` testcase so the output stays compatible.
+    """
+    transitions = triage.transitions
+    if transitions:
+        tests = len(transitions)
+        failures = sum(1 for t in transitions if t.current_status == "failed")
+        skipped = sum(
+            1 for t in transitions if t.current_status in ("skipped", "missing")
+        )
+        body: list[str] = []
+        for transition in transitions:
+            body.extend(_testcase_xml(transition))
+    else:
+        # Aggregate fallback: no per-case data -> one summary testcase.
+        tests, failures, skipped = 1, 0 if triage.success else 1, 0
+        classname = quoteattr(_JUNIT_CLASSNAME)
+        name = quoteattr("regression-summary")
+        if triage.success:
+            body = [f"    <testcase classname={classname} name={name}/>"]
+        else:
+            body = [
+                f"    <testcase classname={classname} name={name}>",
+                f"      <failure type={quoteattr('summary-failure')} "
+                f"message={quoteattr(triage.summary)}>"
+                f"{escape(triage.summary)}</failure>",
+                "    </testcase>",
+            ]
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<testsuites>"]
+    lines.append(
+        f'  <testsuite name="entropy-loop" tests="{tests}" '
+        f'failures="{failures}" errors="0" skipped="{skipped}">'
+    )
+    lines.extend(body)
+    lines.append("  </testsuite>")
+    lines.append("</testsuites>")
+    return "\n".join(lines) + "\n"
+
+
+def write_regression_triage_junit_xml(
+    triage: RegressionTriage, path: str | Path
+) -> None:
+    """Write a triage JUnit XML report to ``path`` (creating parent directories)."""
+    target = Path(path)
+    if target.parent != Path(""):
+        target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(export_regression_triage_junit_xml(triage), encoding="utf-8")

@@ -84,8 +84,10 @@ from .triage import (
     RegressionTriageEngine,
     TriagePolicy,
     export_regression_triage,
+    export_regression_triage_junit_xml,
     export_regression_triage_markdown,
     write_regression_triage_json,
+    write_regression_triage_junit_xml,
     write_regression_triage_markdown,
 )
 from .types import (
@@ -171,6 +173,7 @@ __all__ = [
     "export_regression_report",
     "export_regression_suite",
     "export_regression_triage",
+    "export_regression_triage_junit_xml",
     "export_regression_triage_markdown",
     "generate_regression_case",
     "import_lesson_memory",
@@ -188,6 +191,7 @@ __all__ = [
     "write_junit_report",
     "write_refresh_report",
     "write_regression_triage_json",
+    "write_regression_triage_junit_xml",
     "write_regression_triage_markdown",
     "__version__",
 ]
