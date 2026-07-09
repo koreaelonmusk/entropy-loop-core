@@ -128,6 +128,16 @@ an adapter into a new pack. The CLI `entropy-loop refresh-pack ... -- <command>`
 runs your agent and writes a refreshed pack for `run-pack` to gate. See
 [agent-adapters.md](agent-adapters.md).
 
+### `triage.py` — `RegressionTriageEngine`
+
+Deterministic baseline-vs-current diffing. Given two `run-pack` JSON reports, it
+joins their per-case `case_results` by case id and classifies each transition
+(newly failing, fixed, persistent, skipped, missing) into a `RegressionTriage`. A
+`TriagePolicy` decides the CI outcome (`new-failures` by default). The CLI
+`entropy-loop compare-reports BASELINE CURRENT` writes JSON/Markdown and returns
+stable exit codes. Local-only: no network, no GitHub API. See
+[regression-triage.md](regression-triage.md).
+
 ### `evaluation.py` — `summarize`
 
 A pure function that rolls a `LoopResult` (and any generated regression cases)

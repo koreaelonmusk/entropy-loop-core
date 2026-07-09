@@ -118,6 +118,16 @@ are retained. Compaction is **deterministic** — a fixed-template summary, no
 model calls, no network, no hidden persistence. It is memory hygiene, not
 learning. See [memory-policy.md](memory-policy.md).
 
+## 10. Explaining what changed
+
+A red CI run is more useful when it says *what* changed. Given a baseline report
+and the current one, `RegressionTriageEngine` classifies each case as newly
+failing, fixed, persistent, skipped, or missing, and a `TriagePolicy` decides the
+outcome — by default failing only on **new** regressions so a known long-standing
+failure doesn't block unrelated work. It is a deterministic diff of two local
+reports: no network, no GitHub API, no root-cause analysis. See
+[regression-triage.md](regression-triage.md).
+
 ## What this is not
 
 - Not model training or self-improvement of weights.

@@ -47,13 +47,22 @@ Turn agent failures into portable CI checks. `RegressionPack`,
 `RegressionPackRunner`, JSON/JUnit reports, and `entropy-loop run-pack` with
 stable exit codes (0/1/2) so a reappearing regression fails the build.
 
-## v0.6.0 — Agent adapter + live pack refresh (in progress)
+## v0.6.0 — Agent adapter + live pack refresh
 
 Refresh a pack from a live local agent, explicitly. `AgentCommand`,
 `CommandAgentAdapter`, `RegressionPackRefresher`, and `entropy-loop refresh-pack
 ... -- <command>` — run your agent per case, capture fresh outputs, then gate
-with `run-pack`. Local-only, no shell by default, no secret injection. No version
-bump until a release is cut.
+with `run-pack`. Local-only, no shell by default, no secret injection.
+
+## v0.7.0 — Regression triage + baseline diff (in progress)
+
+Explain what changed between two runs. `CaseTransition`, `RegressionTriage`,
+`TriagePolicy`, `RegressionTriageEngine`, JSON/Markdown triage reports, and
+`entropy-loop compare-reports BASELINE CURRENT --fail-on new-failures` — classify
+each case as newly failing, fixed, persistent, skipped, or missing, and fail CI
+only on new regressions. Deterministic and local-only; no network, no GitHub API.
+The `run-pack` JSON report now carries a backward-compatible `case_results` list.
+No version bump until a release is cut.
 
 ## Later / not now
 

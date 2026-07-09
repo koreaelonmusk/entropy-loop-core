@@ -72,6 +72,16 @@ from .regression_pack import (
     write_junit_report,
 )
 from .replay import RegressionRunner
+from .triage import (
+    CaseTransition,
+    RegressionTriage,
+    RegressionTriageEngine,
+    TriagePolicy,
+    export_regression_triage,
+    export_regression_triage_markdown,
+    write_regression_triage_json,
+    write_regression_triage_markdown,
+)
 from .types import (
     AgentOutput,
     CompactionResult,
@@ -103,6 +113,7 @@ __all__ = [
     "AgentOutput",
     "AgentRunInput",
     "AgentRunResult",
+    "CaseTransition",
     "CommandAgentAdapter",
     "CompactionResult",
     "EntropyLoop",
@@ -126,11 +137,14 @@ __all__ = [
     "RegressionRunResult",
     "RegressionRunner",
     "RegressionSuite",
+    "RegressionTriage",
+    "RegressionTriageEngine",
     "RetryContext",
     "Rule",
     "Severity",
     "Status",
     "Task",
+    "TriagePolicy",
     "VerificationPolicy",
     "VerificationResult",
     "Verifier",
@@ -146,6 +160,8 @@ __all__ = [
     "export_regression_pack_result",
     "export_regression_report",
     "export_regression_suite",
+    "export_regression_triage",
+    "export_regression_triage_markdown",
     "generate_regression_case",
     "import_lesson_memory",
     "import_memory_policy",
@@ -161,5 +177,7 @@ __all__ = [
     "write_json_report",
     "write_junit_report",
     "write_refresh_report",
+    "write_regression_triage_json",
+    "write_regression_triage_markdown",
     "__version__",
 ]

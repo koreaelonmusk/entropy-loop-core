@@ -112,3 +112,7 @@ pack format and CI gate for checking known agent outputs.
 
 This is deterministic agent regression testing and a CI gate. It does not solve
 AI reliability, prevent all regressions, or guarantee correctness.
+
+To explain *what changed* between two runs — new failures vs. fixed vs.
+persistent — diff their JSON reports with `compare-reports`. See
+[regression-triage.md](regression-triage.md).

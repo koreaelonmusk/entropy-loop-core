@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Theme: **regression triage + baseline diff**. Don't just fail CI — explain what
+changed between a baseline run and the current one.
+
+### Added
+
+- `CaseTransition`, `RegressionTriage`, `TriagePolicy`, and
+  `RegressionTriageEngine` (`compare_reports`, `compare_report_files`) — a
+  deterministic, local baseline-vs-current diff of regression reports.
+- Triage report helpers: `export_regression_triage`,
+  `write_regression_triage_json`, `export_regression_triage_markdown`,
+  `write_regression_triage_markdown`.
+- `entropy-loop triage-demo` and `entropy-loop compare-reports BASELINE CURRENT`
+  (options `--json-report`, `--markdown-report`, `--fail-on
+  new-failures|any-failures|never`; exit codes: 0 policy passes, 1 policy fails,
+  2 bad input).
+- `examples/regression_triage_demo.py`, `examples/baseline_regression_report.json`,
+  `examples/current_regression_report.json`, `examples/triage_report.md`, and
+  `docs/regression-triage.md`.
+
+### Changed
+
+- `run-pack --json-report` now includes a backward-compatible `case_results`
+  list (`{case, status, message}`, sorted by case name) so runs can be diffed
+  case by case. Existing aggregate keys are unchanged.
+
+### Safety
+
+- Deterministic and local: compares two JSON reports and writes JSON/Markdown.
+  No LLM calls, no network, no GitHub API, no telemetry, no hidden persistence.
+- No root-cause analysis and no correctness guarantee — triage classifies
+  transitions between two reports, nothing more.
+
 ## [0.6.0] - 2026-07-09
 
 Theme: **agent adapter + live pack refresh**. Run your agent, capture the output,
