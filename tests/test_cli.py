@@ -173,6 +173,132 @@ def test_refresh_pack_exit_2_no_command(tmp_path) -> None:
     assert result.exit_code == 2
 
 
+def _write_report(path, cases) -> None:
+    """Write a minimal JSON report with a case_results list for triage tests."""
+    import json
+
+    passed = sum(1 for s, _ in cases.values() if s == "passed")
+    failed = sum(1 for s, _ in cases.values() if s == "failed")
+    path.write_text(
+        json.dumps(
+            {
+                "pack": "p",
+                "cases": len(cases),
+                "passed": passed,
+                "failed": failed,
+                "skipped": 0,
+                "success": failed == 0,
+                "summary": "report",
+                "case_results": [
+                    {"case": cid, "status": s, "message": m}
+                    for cid, (s, m) in sorted(cases.items())
+                ],
+            }
+        )
+    )
+
+
+def test_triage_demo_runs() -> None:
+    result = runner.invoke(app, ["triage-demo"])
+    assert result.exit_code == 0
+    assert "Entropy Loop Triage Demo" in result.stdout
+    assert "New failures: 1" in result.stdout
+    assert "Fixed: 1" in result.stdout
+
+
+def test_compare_reports_exit_0_no_new_failures(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(app, ["compare-reports", str(base), str(curr)])
+    assert result.exit_code == 0
+
+
+def test_compare_reports_exit_1_on_new_failure(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(app, ["compare-reports", str(base), str(curr)])
+    assert result.exit_code == 1
+
+
+def test_compare_reports_any_failures_policy(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("failed", "boom")})
+    _write_report(curr, {"a": ("failed", "boom")})  # persistent only
+    # default new-failures policy passes; any-failures fails
+    ok = runner.invoke(app, ["compare-reports", str(base), str(curr)])
+    assert ok.exit_code == 0
+    fail = runner.invoke(
+        app, ["compare-reports", str(base), str(curr), "--fail-on", "any-failures"]
+    )
+    assert fail.exit_code == 1
+
+
+def test_compare_reports_never_policy(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app, ["compare-reports", str(base), str(curr), "--fail-on", "never"]
+    )
+    assert result.exit_code == 0
+
+
+def test_compare_reports_exit_2_missing_baseline(tmp_path) -> None:
+    curr = tmp_path / "current.json"
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(app, ["compare-reports", "missing.json", str(curr)])
+    assert result.exit_code == 2
+
+
+def test_compare_reports_exit_2_malformed_json(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    base.write_text("{ not json")
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(app, ["compare-reports", str(base), str(curr)])
+    assert result.exit_code == 2
+
+
+def test_compare_reports_exit_2_invalid_policy(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app, ["compare-reports", str(base), str(curr), "--fail-on", "bogus"]
+    )
+    assert result.exit_code == 2
+
+
+def test_compare_reports_writes_reports(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    jp = tmp_path / "out" / "triage.json"
+    mp = tmp_path / "out" / "triage.md"
+    result = runner.invoke(
+        app,
+        [
+            "compare-reports",
+            str(base),
+            str(curr),
+            "--json-report",
+            str(jp),
+            "--markdown-report",
+            str(mp),
+        ],
+    )
+    assert result.exit_code == 0
+    assert jp.exists() and mp.exists()
+
+
 def test_refresh_pack_writes_json_report(tmp_path) -> None:
     src = tmp_path / "in.pack.json"
     dst = tmp_path / "out.pack.json"

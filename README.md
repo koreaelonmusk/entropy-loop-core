@@ -132,6 +132,7 @@ entropy-loop replay-demo   # generate a regression case, then replay it as a sui
 entropy-loop memory-demo   # compact repeated failure lessons with a MemoryPolicy
 entropy-loop pack-demo     # build, save, load, and run a regression pack
 entropy-loop agent-demo    # refresh a pack from an agent, then run it
+entropy-loop triage-demo   # diff a baseline run against a current run
 entropy-loop demo          # run the loop: verify → trace → learn → retry → regress
 entropy-loop doctor        # health-check the install
 ```
@@ -160,6 +161,21 @@ entropy-loop run-pack output.pack.json
 See [docs/regression-packs.md](docs/regression-packs.md),
 [docs/agent-adapters.md](docs/agent-adapters.md), and
 [docs/github-actions.md](docs/github-actions.md).
+
+### Explain what changed
+
+Don't just fail CI — diff the current run against a baseline and fail only on
+newly introduced regressions:
+
+```bash
+entropy-loop compare-reports reports/baseline.json reports/current.json \
+  --markdown-report reports/triage.md \
+  --fail-on new-failures
+```
+
+`compare-reports` classifies each case as newly failing, fixed, persistent, or
+missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
+2 = bad input). See [docs/regression-triage.md](docs/regression-triage.md).
 
 ## What it is / what it is not
 

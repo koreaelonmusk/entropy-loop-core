@@ -31,12 +31,19 @@ from .regression import generate_regression_case
 from .regression_pack import (
     RegressionPack,
     RegressionPackRunner,
+    export_json_report,
     load_regression_pack,
     save_regression_pack,
     write_json_report,
     write_junit_report,
 )
 from .replay import RegressionRunner
+from .triage import (
+    RegressionTriageEngine,
+    TriagePolicy,
+    write_regression_triage_json,
+    write_regression_triage_markdown,
+)
 from .types import (
     AgentOutput,
     FailureTrace,
@@ -394,6 +401,107 @@ def refresh_pack(
         typer.echo(f"json report: {json_report}")
 
     if not result.success:
+        raise typer.Exit(code=1)
+
+
+def _triage_report(pack: RegressionPack) -> dict:
+    """Run a pack and return its enriched JSON report dict (with case_results)."""
+    return export_json_report(RegressionPackRunner().run_pack(pack))
+
+
+@app.command(name="triage-demo")
+def triage_demo() -> None:
+    """Compare a baseline run with a current run and explain what changed."""
+    policy = VerificationPolicy(require_non_empty=True, expect_json=True)
+
+    def case(name: str) -> RegressionCase:
+        return RegressionCase(
+            name=name,
+            instruction=f"return {name} as JSON",
+            expected_rule="valid_json_when_expected",
+            failure_reason="expected valid JSON",
+            category="invalid_json",
+        )
+
+    cases = [case("json-1"), case("json-2"), case("json-3")]
+    # Baseline: json-2 already failing; json-1 and json-3 passing.
+    baseline_pack = RegressionPack(
+        name="triage-demo",
+        policy=policy,
+        cases=cases,
+        outputs={"json-1": "{}", "json-2": "not json", "json-3": "{}"},
+    )
+    # Current: json-1 newly broke, json-2 got fixed, json-3 still passes.
+    current_pack = RegressionPack(
+        name="triage-demo",
+        policy=policy,
+        cases=cases,
+        outputs={"json-1": "not json", "json-2": "{}", "json-3": "{}"},
+    )
+
+    triage = RegressionTriageEngine().compare_reports(
+        _triage_report(baseline_pack), _triage_report(current_pack)
+    )
+
+    typer.echo("Entropy Loop Triage Demo")
+    typer.echo("1. Baseline and current reports compared")
+    typer.echo(f"2. {triage.summary}")
+    typer.echo(f"3. New failures: {triage.new_failure_count}")
+    typer.echo(f"4. Fixed: {triage.fixed_count}")
+    typer.echo(f"5. Persistent failures: {triage.persistent_failure_count}")
+    for transition in triage.transitions:
+        typer.echo(f"   - {transition.summary}")
+    typer.echo("6. Result: regression triage ready for CI")
+
+
+@app.command(name="compare-reports")
+def compare_reports(
+    baseline_json: str = typer.Argument(..., help="Path to the baseline JSON report."),
+    current_json: str = typer.Argument(..., help="Path to the current JSON report."),
+    json_report: str = typer.Option(
+        None, "--json-report", help="Write a triage JSON report to this path."
+    ),
+    markdown_report: str = typer.Option(
+        None, "--markdown-report", help="Write a triage Markdown report to this path."
+    ),
+    fail_on: str = typer.Option(
+        "new-failures",
+        "--fail-on",
+        help="When to fail: new-failures | any-failures | never.",
+    ),
+) -> None:
+    """Diff a baseline report against a current one and explain what changed.
+
+    Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
+    invalid JSON, or invalid policy).
+    """
+    try:
+        policy = TriagePolicy(fail_on=fail_on)
+    except Exception as exc:  # noqa: BLE001 - invalid policy is a usage error (exit 2)
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    try:
+        triage = RegressionTriageEngine().compare_report_files(
+            baseline_json, current_json, policy
+        )
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:  # noqa: BLE001 - any parse error is a usage error (exit 2)
+        typer.echo(f"error: invalid report: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    typer.echo(triage.summary)
+
+    if json_report:
+        write_regression_triage_json(triage, json_report)
+        typer.echo(f"json report: {json_report}")
+    if markdown_report:
+        write_regression_triage_markdown(triage, markdown_report)
+        typer.echo(f"markdown report: {markdown_report}")
+
+    if not triage.success:
         raise typer.Exit(code=1)
 
 

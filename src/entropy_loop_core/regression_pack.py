@@ -89,6 +89,7 @@ class RegressionPackResult(BaseModel):
         passed_count: How many cases passed.
         failed_count: How many cases failed.
         skipped_count: Cases skipped because they had no reference output.
+        skipped_cases: Names of the skipped cases, in order.
         success: True when no case failed.
         report: The underlying regression report, if available.
         summary: A deterministic one-line summary.
@@ -99,6 +100,9 @@ class RegressionPackResult(BaseModel):
     passed_count: int = Field(..., ge=0, description="Cases that passed.")
     failed_count: int = Field(..., ge=0, description="Cases that failed.")
     skipped_count: int = Field(default=0, ge=0, description="Cases skipped.")
+    skipped_cases: list[str] = Field(
+        default_factory=list, description="Names of the skipped cases."
+    )
     success: bool = Field(..., description="True when no case failed.")
     report: RegressionReport | None = Field(
         default=None, description="Underlying regression report."
@@ -129,7 +133,10 @@ class RegressionPackRunner:
         runner = runner or RegressionRunner()
         verifier = Verifier.from_policy(pack.policy)
         runnable = [case for case in pack.cases if case.name in pack.outputs]
-        skipped = len(pack.cases) - len(runnable)
+        skipped_cases = [
+            case.name for case in pack.cases if case.name not in pack.outputs
+        ]
+        skipped = len(skipped_cases)
         outputs = pack.outputs
 
         def agent(task: Task, context: RetryContext) -> AgentOutput:
@@ -149,6 +156,7 @@ class RegressionPackRunner:
             passed_count=passed,
             failed_count=failed,
             skipped_count=skipped,
+            skipped_cases=skipped_cases,
             success=success,
             report=report,
             summary=summary,
@@ -196,7 +204,13 @@ def export_regression_pack_result(result: RegressionPackResult) -> dict[str, Any
 
 
 def export_json_report(result: RegressionPackResult) -> dict[str, Any]:
-    """Render a compact, machine-readable JSON report of a pack run."""
+    """Render a compact, machine-readable JSON report of a pack run.
+
+    The aggregate keys (``pack``, ``cases``, ``passed``, ``failed``, ``skipped``,
+    ``success``, ``summary``) are unchanged. A ``case_results`` list of
+    ``{"case", "status", "message"}`` entries — sorted by case name — is added so
+    downstream tools (e.g. ``compare-reports``) can diff runs case by case.
+    """
     return {
         "pack": result.pack_name,
         "cases": result.case_count,
@@ -205,7 +219,31 @@ def export_json_report(result: RegressionPackResult) -> dict[str, Any]:
         "skipped": result.skipped_count,
         "success": result.success,
         "summary": result.summary,
+        "case_results": _case_results(result),
     }
+
+
+def _case_results(result: RegressionPackResult) -> list[dict[str, Any]]:
+    """Build per-case ``{case, status, message}`` entries, sorted by case name."""
+    entries: list[dict[str, Any]] = []
+    if result.report is not None:
+        for case_result in result.report.results:
+            if case_result.passed:
+                status, message = "passed", None
+            else:
+                status = "failed"
+                message = (
+                    case_result.verification_result.reason
+                    if case_result.verification_result
+                    else None
+                ) or case_result.error
+            entries.append(
+                {"case": case_result.case.name, "status": status, "message": message}
+            )
+    for name in result.skipped_cases:
+        entries.append({"case": name, "status": "skipped", "message": None})
+    entries.sort(key=lambda entry: entry["case"])
+    return entries
 
 
 def write_json_report(result: RegressionPackResult, path: str | Path) -> None:

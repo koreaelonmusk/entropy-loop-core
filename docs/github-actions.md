@@ -84,6 +84,40 @@ Without `refresh-pack`, `run-pack` verifies the candidate outputs **stored in th
 pack** — a committed snapshot. Add a `refresh-pack` step first (above) to gate on
 your agent's *current* behavior.
 
+## Compare current results against a baseline
+
+Use `compare-reports` when you want CI to fail only on newly introduced agent
+regressions, and to attach a reviewable diff of what changed.
+
+```yaml
+      - name: Run current regression pack
+        run: |
+          mkdir -p reports
+          entropy-loop run-pack /tmp/refreshed.pack.json \
+            --json-report reports/current.json || true
+
+      - name: Compare against baseline
+        run: |
+          entropy-loop compare-reports baselines/entropy-loop.json reports/current.json \
+            --markdown-report reports/triage.md \
+            --json-report reports/triage.json \
+            --fail-on new-failures
+```
+
+Notes:
+
+- `run-pack` may exit `1` when failures exist, so CI examples may use `|| true`
+  before triage; `compare-reports` then decides whether the build should fail.
+- `--fail-on new-failures` (default) fails only on cases that passed in the
+  baseline and fail now; `any-failures` fails on any current failure; `never`
+  only reports.
+- Entropy Loop Core does not upload artifacts or comment on PRs. Reports are
+  local files unless your CI uploads them explicitly.
+- The baseline is a plain JSON report you commit and review like any fixture.
+
+See [regression-triage.md](regression-triage.md) for the full transition model
+and exit codes.
+
 ## Notes
 
 - Keep it minimal; add JUnit/JSON report steps only if your CI consumes them.

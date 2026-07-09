@@ -80,3 +80,9 @@ entropy-loop run-pack output.pack.json
 The framework is deterministic given the adapter's outputs. Those outputs depend
 on the command you run, so `refresh-pack` is only as deterministic as your agent;
 `run-pack` remains fully deterministic.
+
+## Explaining what changed
+
+Once you have `run-pack` JSON reports from two runs, `compare-reports` diffs them
+and classifies each case as newly failing, fixed, persistent, or missing — so CI
+can fail only on new regressions. See [regression-triage.md](regression-triage.md).

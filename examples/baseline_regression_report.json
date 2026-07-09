@@ -1,0 +1,26 @@
+{
+  "case_results": [
+    {
+      "case": "json-1",
+      "message": null,
+      "status": "passed"
+    },
+    {
+      "case": "json-2",
+      "message": "expected valid JSON: Expecting value: line 1 column 1 (char 0)",
+      "status": "failed"
+    },
+    {
+      "case": "json-3",
+      "message": null,
+      "status": "passed"
+    }
+  ],
+  "cases": 3,
+  "failed": 1,
+  "pack": "triage-demo",
+  "passed": 2,
+  "skipped": 0,
+  "success": false,
+  "summary": "Regression pack `triage-demo` completed: 2 passed, 1 failed, 0 skipped."
+}
