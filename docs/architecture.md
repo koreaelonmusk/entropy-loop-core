@@ -111,6 +111,14 @@ drops empty/low-signal lessons, deduplicates by guidance fingerprint or failure
 category, and caps how many lessons are retained. Deterministic and side-effect
 free — no LLM, no network, no database. See [memory-policy.md](memory-policy.md).
 
+### `regression_pack.py` — `RegressionPack`, `RegressionPackRunner`
+
+A `RegressionPack` bundles cases with a `VerificationPolicy` and reference
+outputs into a portable JSON file. `RegressionPackRunner` replays it (reusing
+`RegressionRunner`) into a `RegressionPackResult`, with JSON/JUnit report
+writers. The CLI `entropy-loop run-pack` returns stable exit codes (0/1/2) so a
+reappearing regression fails CI. See [regression-packs.md](regression-packs.md).
+
 ### `evaluation.py` — `summarize`
 
 A pure function that rolls a `LoopResult` (and any generated regression cases)

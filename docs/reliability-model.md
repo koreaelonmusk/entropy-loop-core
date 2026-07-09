@@ -97,6 +97,11 @@ local JSON, so a corpus of past failures persists across runs. Replay is
 **deterministic regression checking** — no retries inside the runner, no network,
 no model training, and no correctness guarantee.
 
+A `RegressionPack` takes this further: it bundles cases, a verification policy,
+and reference outputs into a portable file that runs in CI via
+`entropy-loop run-pack`, with stable exit codes so a reappearing regression fails
+the build. See [regression-packs.md](regression-packs.md).
+
 ## 9. Memory hygiene
 
 Generating a lesson per failure is only useful until memory fills with

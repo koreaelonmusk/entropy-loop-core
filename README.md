@@ -130,12 +130,26 @@ Full worked example: [examples/json_agent_guard.py](examples/json_agent_guard.py
 ```bash
 entropy-loop replay-demo   # generate a regression case, then replay it as a suite
 entropy-loop memory-demo   # compact repeated failure lessons with a MemoryPolicy
+entropy-loop pack-demo     # build, save, load, and run a regression pack
 entropy-loop demo          # run the loop: verify → trace → learn → retry → regress
 entropy-loop doctor        # health-check the install
 ```
 
 `memory-demo` shows how repeated failure lessons can be compacted with a
 deterministic `MemoryPolicy` — see [docs/memory-policy.md](docs/memory-policy.md).
+
+### Run a regression pack in CI
+
+Turn captured failures into a portable pack and gate your build on it:
+
+```bash
+entropy-loop run-pack examples/json_agent_guard.pack.json
+```
+
+`run-pack` exits non-zero when a known agent regression reappears (0 = pass,
+1 = failure, 2 = bad input), making replayable failure checks usable in CI. See
+[docs/regression-packs.md](docs/regression-packs.md) and
+[docs/github-actions.md](docs/github-actions.md).
 
 ## What it is / what it is not
 

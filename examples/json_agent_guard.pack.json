@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "category": "invalid_json",
+      "expected_rule": "valid_json_when_expected",
+      "failure_reason": "expected valid JSON",
+      "instruction": "return the user record as JSON",
+      "name": "json-1"
+    },
+    {
+      "category": "invalid_json",
+      "expected_rule": "valid_json_when_expected",
+      "failure_reason": "expected valid JSON",
+      "instruction": "return the order as JSON",
+      "name": "json-2"
+    },
+    {
+      "category": "invalid_json",
+      "expected_rule": "valid_json_when_expected",
+      "failure_reason": "expected valid JSON",
+      "instruction": "return the status as JSON",
+      "name": "json-3"
+    }
+  ],
+  "created_by": "entropy-loop-core",
+  "metadata": {},
+  "name": "json-agent-guard",
+  "outputs": {
+    "json-1": "{\"user\": \"ada\"}",
+    "json-2": "{\"order\": 42}",
+    "json-3": "{\"status\": \"ok\"}"
+  },
+  "policy": {
+    "expect_json": true,
+    "max_length": null,
+    "require_non_empty": true,
+    "required_terms": []
+  },
+  "schema_version": "1",
+  "version": "1"
+}

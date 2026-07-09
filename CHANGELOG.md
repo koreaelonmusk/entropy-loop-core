@@ -6,6 +6,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Theme: **regression pack + CI gate**. Turn captured agent failures into portable
+packs that run in CI and fail the build when a known regression reappears.
+*(Version not yet bumped; a release cut will set 0.5.0.)*
+
+### Added
+
+- `RegressionPack` — a portable, self-contained pack (cases + verification policy
+  + reference outputs) that replays deterministically without a live agent.
+- `RegressionPackResult` and `RegressionPackRunner` (`run_pack`, `run_pack_file`).
+- Pack import/export + local JSON save/load helpers.
+- JSON and JUnit report writers (`export/write_json_report`,
+  `export/write_junit_report`).
+- `entropy-loop pack-demo` and `entropy-loop run-pack` (stable exit codes:
+  0 pass, 1 failure, 2 bad input; optional `--json-report` / `--junit-report`).
+- `examples/regression_pack_ci.py`, `examples/json_agent_guard.pack.json`,
+  `docs/regression-packs.md`, and `docs/github-actions.md`.
+
+### Safety
+
+- Deterministic; no LLM calls, no network, no database, no vector store, no RAG,
+  no telemetry, no hidden persistence.
+
 ## [0.4.0] - 2026-07-09
 
 Theme: **memory policy + lesson compaction**. Failure memory should not grow
