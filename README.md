@@ -178,7 +178,9 @@ calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
-- **v0.3.0** — replay *(current)*
+- **v0.4.0** — memory policy / lesson compaction *(current)*
+- **v0.3.1** — packaging readiness
+- **v0.3.0** — replay
 - **v0.2.0** — classification + evaluation
 - **v0.1.0** — the first Failure Compiler loop
 
@@ -186,9 +188,8 @@ Details in [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v0.3.1** — stabilization / packaging readiness
-- **v0.4.0** — memory policy / lesson compaction
-- **Later** — persistence adapters and richer reports
+- **Next (directional)** — persistence adapters, richer reports, and broader
+  failure-memory recall.
 
 Full plan in [docs/roadmap.md](docs/roadmap.md).
 
