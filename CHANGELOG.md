@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-10
+
 Theme: **GitHub Action + CI evidence bundle**. From regression reports to CI
 evidence in one GitHub Action.
 
@@ -29,6 +31,19 @@ evidence in one GitHub Action.
 
 - `RegressionTriage` now records the applied `policy` (backward-compatible,
   nullable) so evidence bundles and step summaries can report it.
+- README and CI docs now include first-party GitHub Action usage.
+
+### Notes
+
+- The GitHub Action writes local CI evidence files and can append a compact
+  Markdown summary to the GitHub Actions step summary. It does not call the
+  GitHub API, comment on PRs, require `GITHUB_TOKEN`, or upload artifacts by
+  itself; artifact upload remains explicit via `actions/upload-artifact`.
+- Action package install: with `package-version` set it installs
+  `entropy-loop-core==<package-version>`; when pinned to a semver tag such as
+  `v0.8.0` with no `package-version` it installs the matching PyPI package (e.g.
+  `entropy-loop-core==0.8.0`); on a branch ref such as `main` it installs the
+  latest. Set `package-version` for reproducible CI on branch refs.
 
 ### Safety
 
@@ -36,8 +51,8 @@ evidence in one GitHub Action.
   directory; no timestamps, no environment capture.
 - No GitHub API calls, no PR/issue comments, no artifact uploads, no
   `GITHUB_TOKEN`, no network, no telemetry, no hidden persistence.
-- Transition classification only — not root-cause analysis, no correctness
-  guarantee.
+- Deterministic CI evidence generation and report comparison — not root-cause
+  analysis, no correctness guarantee.
 
 ## [0.7.0] - 2026-07-10
 
@@ -262,6 +277,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[0.8.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.0
 [0.7.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.7.0
 [0.6.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.6.0
 [0.5.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.5.0
