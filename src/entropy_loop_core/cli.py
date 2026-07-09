@@ -13,11 +13,21 @@ from __future__ import annotations
 import typer
 
 from .evaluation import summarize
+from .lessons import LessonGenerator
 from .loop import EntropyLoop
 from .memory import MemoryStore
+from .memory_policy import LessonCompactor
 from .regression import generate_regression_case
 from .replay import RegressionRunner
-from .types import AgentOutput, FailureTrace, RegressionSuite, RetryContext, Task
+from .types import (
+    AgentOutput,
+    FailureTrace,
+    MemoryPolicy,
+    RegressionSuite,
+    RetryContext,
+    Task,
+    VerificationResult,
+)
 from .verification import VerificationPolicy, Verifier
 
 app = typer.Typer(
@@ -122,6 +132,68 @@ def replay_demo() -> None:
 
     if report.failed:
         raise typer.Exit(code=1)
+
+
+def _memory_trace(
+    instruction: str, reason: str, rule_name: str, category: str
+) -> FailureTrace:
+    """Build a fake failure trace for the memory demo."""
+    return FailureTrace(
+        task=Task(id="mem", instruction=instruction),
+        output=AgentOutput(content=""),
+        verification_result=VerificationResult(
+            passed=False, reason=reason, rule_name=rule_name, category=category
+        ),
+        attempt=1,
+    )
+
+
+@app.command(name="memory-demo")
+def memory_demo() -> None:
+    """Generate repeated-failure lessons, then compact them with a MemoryPolicy."""
+    generator = LessonGenerator()
+    traces = [
+        _memory_trace(
+            "report the job status",
+            "missing required terms: ['status']",
+            "contains_required_terms",
+            "missing_required_term",
+        ),
+        _memory_trace(
+            "report the job status",
+            "missing required terms: ['status']",
+            "contains_required_terms",
+            "missing_required_term",
+        ),
+        _memory_trace(
+            "summarize the notes", "output is empty", "non_empty_output", "empty_output"
+        ),
+        _memory_trace(
+            "summarize the notes", "output is empty", "non_empty_output", "empty_output"
+        ),
+        _memory_trace(
+            "return the record as JSON",
+            "expected valid JSON",
+            "valid_json_when_expected",
+            "invalid_json",
+        ),
+    ]
+    lessons = [generator.generate(trace) for trace in traces]
+    policy = MemoryPolicy(dedupe_by_fingerprint=True, max_lessons=3)
+    result = LessonCompactor().compact(lessons, policy)
+
+    typer.echo("Entropy Loop Memory Demo")
+    typer.echo(f"1. Lessons generated: {len(lessons)}")
+    typer.echo(
+        "2. Policy: "
+        f"dedupe_by_fingerprint={policy.dedupe_by_fingerprint}, "
+        f"max_lessons={policy.max_lessons}"
+    )
+    typer.echo("3. Compaction complete")
+    typer.echo(f"4. Input lessons: {result.input_count}")
+    typer.echo(f"5. Output lessons: {result.output_count}")
+    typer.echo(f"6. Dropped: {result.dropped_count}")
+    typer.echo("7. Result: compacted memory ready")
 
 
 @app.command()

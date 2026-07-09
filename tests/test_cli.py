@@ -32,3 +32,13 @@ def test_replay_demo_runs_and_passes() -> None:
     assert "Regression suite created" in result.stdout
     assert "Result: passed" in result.stdout
     assert "success_rate=100.0%" in result.stdout
+
+
+def test_memory_demo_runs_and_compacts() -> None:
+    result = runner.invoke(app, ["memory-demo"])
+    assert result.exit_code == 0
+    assert "Entropy Loop Memory Demo" in result.stdout
+    assert "Lessons generated: 5" in result.stdout
+    assert "Input lessons: 5" in result.stdout
+    assert "Output lessons: 3" in result.stdout
+    assert "Dropped: 2" in result.stdout

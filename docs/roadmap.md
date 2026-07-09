@@ -34,11 +34,13 @@ re-checked, not just stored. Shipped: `RegressionSuite`, `RegressionRunner`,
 `RegressionRunResult`, `RegressionReport`, suite import/export and JSON
 save/load, and `entropy-loop replay-demo`.
 
-## v0.4.0 — Memory policy (directional)
+## v0.4.0 — Memory policy (in progress)
 
-Decide what to remember, group, and forget: lesson deduplication, fingerprint
-grouping, memory compaction, and recent / relevant / frequent recall — all as a
-simple, deterministic, public-safe policy interface.
+Decide what to remember, group, and forget. Implemented: `MemoryPolicy`,
+`LessonCompactor`, `LessonMemory`, `CompactionResult`, memory import/export, and
+`entropy-loop memory-demo` — deterministic lesson deduplication (by fingerprint
+or category), minimum-occurrence and count caps, and drop-empty hygiene. No
+version bump until a release is cut.
 
 ## Later / not now
 
