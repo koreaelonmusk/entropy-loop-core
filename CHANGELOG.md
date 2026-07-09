@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Theme: **memory policy + lesson compaction**. Failure memory should not grow
+without bound; v0.4.0 decides what to keep, merge, and drop. *(Version not yet
+bumped; a release cut will set 0.4.0.)*
+
+### Added
+
+- `MemoryPolicy` — a deterministic policy for retaining and compacting lessons
+  (dedupe by fingerprint or category, `max_lessons`, `min_occurrences`, per-category
+  caps, drop-empty, keep-latest).
+- `LessonMemory` and `CompactionResult` typed models.
+- `LessonCompactor` — `compact(...)` and `compact_memory(...)`, deterministic and
+  side-effect free.
+- Memory import/export + local JSON save/load helpers.
+- `entropy-loop memory-demo` CLI command.
+- `examples/memory_policy_guard.py` and `docs/memory-policy.md`.
+
+### Safety
+
+- Still deterministic; no LLM calls, no network, no database, no vector store.
+- No hidden persistence; no private business logic; no customer data.
+
 ## [0.3.1] - 2026-07-09
 
 Theme: **packaging readiness**. A stabilization release — no runtime behavior

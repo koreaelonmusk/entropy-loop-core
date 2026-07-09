@@ -129,9 +129,13 @@ Full worked example: [examples/json_agent_guard.py](examples/json_agent_guard.py
 
 ```bash
 entropy-loop replay-demo   # generate a regression case, then replay it as a suite
+entropy-loop memory-demo   # compact repeated failure lessons with a MemoryPolicy
 entropy-loop demo          # run the loop: verify → trace → learn → retry → regress
 entropy-loop doctor        # health-check the install
 ```
+
+`memory-demo` shows how repeated failure lessons can be compacted with a
+deterministic `MemoryPolicy` — see [docs/memory-policy.md](docs/memory-policy.md).
 
 ## What it is / what it is not
 

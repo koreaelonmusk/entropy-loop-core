@@ -97,6 +97,16 @@ local JSON, so a corpus of past failures persists across runs. Replay is
 **deterministic regression checking** — no retries inside the runner, no network,
 no model training, and no correctness guarantee.
 
+## 9. Memory hygiene
+
+Generating a lesson per failure is only useful until memory fills with
+near-duplicates. A `MemoryPolicy` and `LessonCompactor` decide what to keep,
+merge, and drop: drop empty lessons, deduplicate by guidance fingerprint or
+failure category, enforce a minimum occurrence count, and cap how many lessons
+are retained. Compaction is **deterministic** — a fixed-template summary, no
+model calls, no network, no hidden persistence. It is memory hygiene, not
+learning. See [memory-policy.md](memory-policy.md).
+
 ## What this is not
 
 - Not model training or self-improvement of weights.

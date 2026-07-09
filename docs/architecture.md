@@ -104,6 +104,13 @@ runs the agent once (attempt 1, no lessons), verifies, and returns pass/fail;
 `run_suite` aggregates a `RegressionReport`. Deterministic, no retries, no
 network. Agent exceptions are caught and reported as failures.
 
+### `memory_policy.py` — `LessonCompactor`
+
+Applies a `MemoryPolicy` to a list of lessons and returns a `CompactionResult`:
+drops empty/low-signal lessons, deduplicates by guidance fingerprint or failure
+category, and caps how many lessons are retained. Deterministic and side-effect
+free — no LLM, no network, no database. See [memory-policy.md](memory-policy.md).
+
 ### `evaluation.py` — `summarize`
 
 A pure function that rolls a `LoopResult` (and any generated regression cases)

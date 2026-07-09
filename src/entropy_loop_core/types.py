@@ -337,3 +337,103 @@ class RegressionReport(BaseModel):
         if self.total_cases == 0:
             return 0.0
         return round(self.passed / self.total_cases * 100, 1)
+
+
+class MemoryPolicy(BaseModel):
+    """A deterministic policy for retaining and compacting failure lessons.
+
+    The policy decides what to keep, merge, and drop when failure memory grows.
+    All settings are deterministic; invalid values (negative limits) are rejected.
+
+    Attributes:
+        max_lessons: Cap on total lessons kept, or ``None`` for no cap.
+        dedupe_by_fingerprint: Collapse lessons that share a guidance fingerprint.
+        dedupe_by_failure_category: Collapse lessons to one per failure category.
+        keep_latest: When deduping or capping, keep the newest (else the oldest).
+        min_occurrences: Drop lessons whose fingerprint appears fewer than this.
+        max_lessons_per_category: Cap on lessons per category, or ``None``.
+        drop_empty_lessons: Drop lessons with no summary, guidance, or patch.
+        prefer_regression_cases: When capping, prefer lessons whose category has a
+            regression case (only has effect when regression cases are supplied).
+    """
+
+    max_lessons: int | None = Field(
+        default=None, ge=1, description="Cap on total lessons, or None for no cap."
+    )
+    dedupe_by_fingerprint: bool = Field(
+        default=True, description="Collapse lessons with the same fingerprint."
+    )
+    dedupe_by_failure_category: bool = Field(
+        default=False, description="Collapse lessons to one per failure category."
+    )
+    keep_latest: bool = Field(
+        default=True, description="Keep the newest when deduping/capping."
+    )
+    min_occurrences: int = Field(
+        default=1, ge=1, description="Minimum fingerprint occurrences to keep."
+    )
+    max_lessons_per_category: int | None = Field(
+        default=None, ge=1, description="Cap on lessons per category, or None."
+    )
+    drop_empty_lessons: bool = Field(
+        default=True, description="Drop lessons with no content."
+    )
+    prefer_regression_cases: bool = Field(
+        default=True, description="Prefer lessons whose category has a regression case."
+    )
+
+
+class LessonMemory(BaseModel):
+    """A container for lessons plus lightweight metadata.
+
+    Attributes:
+        lessons: The lessons currently held in memory.
+        metadata: Optional free-form context about this memory.
+        source_trace_count: How many failure traces these lessons came from.
+        compacted_at: Optional caller-provided timestamp of last compaction.
+        policy_name: Optional name of the policy last applied.
+    """
+
+    lessons: list[Lesson] = Field(default_factory=list, description="Held lessons.")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Optional free-form context."
+    )
+    source_trace_count: int = Field(
+        default=0, ge=0, description="Failure traces these lessons came from."
+    )
+    compacted_at: str | None = Field(
+        default=None, description="Caller-provided timestamp of last compaction."
+    )
+    policy_name: str | None = Field(
+        default=None, description="Name of the policy last applied."
+    )
+
+
+class CompactionResult(BaseModel):
+    """The outcome of compacting a set of lessons.
+
+    Attributes:
+        input_count: How many lessons went in.
+        output_count: How many lessons remain.
+        dropped_count: How many lessons were removed in total.
+        merged_count: How many were removed specifically by deduplication.
+        lessons: The compacted lessons, in order.
+        summary: A deterministic one-line summary of the compaction.
+        dropped_reasons: Count of dropped lessons by reason.
+        category_counts: Count of remaining lessons by category.
+    """
+
+    input_count: int = Field(..., ge=0, description="Lessons in.")
+    output_count: int = Field(..., ge=0, description="Lessons remaining.")
+    dropped_count: int = Field(..., ge=0, description="Lessons removed in total.")
+    merged_count: int = Field(..., ge=0, description="Removed by deduplication.")
+    lessons: list[Lesson] = Field(
+        default_factory=list, description="Compacted lessons, in order."
+    )
+    summary: str = Field(..., description="Deterministic one-line summary.")
+    dropped_reasons: dict[str, int] = Field(
+        default_factory=dict, description="Dropped lessons by reason."
+    )
+    category_counts: dict[str, int] = Field(
+        default_factory=dict, description="Remaining lessons by category."
+    )
