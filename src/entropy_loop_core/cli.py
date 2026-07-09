@@ -10,6 +10,9 @@ Exposes an ``entropy-loop`` command with:
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import typer
 
 from .evaluation import summarize
@@ -18,11 +21,20 @@ from .loop import EntropyLoop
 from .memory import MemoryStore
 from .memory_policy import LessonCompactor
 from .regression import generate_regression_case
+from .regression_pack import (
+    RegressionPack,
+    RegressionPackRunner,
+    load_regression_pack,
+    save_regression_pack,
+    write_json_report,
+    write_junit_report,
+)
 from .replay import RegressionRunner
 from .types import (
     AgentOutput,
     FailureTrace,
     MemoryPolicy,
+    RegressionCase,
     RegressionSuite,
     RetryContext,
     Task,
@@ -194,6 +206,102 @@ def memory_demo() -> None:
     typer.echo(f"5. Output lessons: {result.output_count}")
     typer.echo(f"6. Dropped: {result.dropped_count}")
     typer.echo("7. Result: compacted memory ready")
+
+
+def _demo_pack() -> RegressionPack:
+    """Build a small, deterministic JSON-agent regression pack that passes."""
+    policy = VerificationPolicy(require_non_empty=True, expect_json=True)
+    cases = [
+        RegressionCase(
+            name="json-1",
+            instruction="return the user record as JSON",
+            expected_rule="valid_json_when_expected",
+            failure_reason="expected valid JSON",
+            category="invalid_json",
+        ),
+        RegressionCase(
+            name="json-2",
+            instruction="return the order as JSON",
+            expected_rule="valid_json_when_expected",
+            failure_reason="expected valid JSON",
+            category="invalid_json",
+        ),
+        RegressionCase(
+            name="json-3",
+            instruction="return the status as JSON",
+            expected_rule="valid_json_when_expected",
+            failure_reason="expected valid JSON",
+            category="invalid_json",
+        ),
+    ]
+    outputs = {
+        "json-1": '{"user": "ada"}',
+        "json-2": '{"order": 42}',
+        "json-3": '{"status": "ok"}',
+    }
+    return RegressionPack(
+        name="json-agent-guard", policy=policy, cases=cases, outputs=outputs
+    )
+
+
+@app.command(name="pack-demo")
+def pack_demo() -> None:
+    """Create a regression pack, save it, load it, and run it."""
+    pack = _demo_pack()
+    typer.echo("Entropy Loop Regression Pack Demo")
+    typer.echo(f"1. Pack created: {pack.name}")
+    typer.echo(f"2. Cases: {len(pack.cases)}")
+
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "pack.json"
+        save_regression_pack(pack, path)
+        typer.echo("3. Pack saved")
+        loaded = load_regression_pack(path)
+        typer.echo("4. Pack loaded")
+        result = RegressionPackRunner().run_pack(loaded)
+
+    typer.echo("5. Pack run complete")
+    typer.echo(f"6. Passed: {result.passed_count}")
+    typer.echo(f"7. Failed: {result.failed_count}")
+    typer.echo("8. Result: regression pack ready for CI")
+
+    if not result.success:
+        raise typer.Exit(code=1)
+
+
+@app.command(name="run-pack")
+def run_pack(
+    pack_path: str = typer.Argument(..., help="Path to a regression pack JSON file."),
+    json_report: str = typer.Option(
+        None, "--json-report", help="Write a JSON report to this path."
+    ),
+    junit_report: str = typer.Option(
+        None, "--junit-report", help="Write a JUnit XML report to this path."
+    ),
+) -> None:
+    """Run a regression pack. Exit 0 = all pass, 1 = a failure, 2 = bad input."""
+    path = Path(pack_path)
+    if not path.is_file():
+        typer.echo(f"error: regression pack not found: {pack_path}", err=True)
+        raise typer.Exit(code=2)
+    try:
+        pack = load_regression_pack(path)
+    except Exception as exc:  # noqa: BLE001 - any load error is a usage error (exit 2)
+        typer.echo(f"error: invalid regression pack: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    result = RegressionPackRunner().run_pack(pack)
+    typer.echo(result.summary)
+
+    if json_report:
+        write_json_report(result, json_report)
+        typer.echo(f"json report: {json_report}")
+    if junit_report:
+        write_junit_report(result, junit_report)
+        typer.echo(f"junit report: {junit_report}")
+
+    if not result.success:
+        raise typer.Exit(code=1)
 
 
 @app.command()

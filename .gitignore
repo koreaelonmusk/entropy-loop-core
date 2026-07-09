@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Entropy Loop regression-pack report artifacts
+reports/
+examples/entropy-loop.report.json

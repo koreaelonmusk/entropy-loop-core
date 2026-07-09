@@ -34,13 +34,19 @@ re-checked, not just stored. Shipped: `RegressionSuite`, `RegressionRunner`,
 `RegressionRunResult`, `RegressionReport`, suite import/export and JSON
 save/load, and `entropy-loop replay-demo`.
 
-## v0.4.0 — Memory policy (in progress)
+## v0.4.0 — Memory policy
 
-Decide what to remember, group, and forget. Implemented: `MemoryPolicy`,
-`LessonCompactor`, `LessonMemory`, `CompactionResult`, memory import/export, and
+Decide what to remember, group, and forget. `MemoryPolicy`, `LessonCompactor`,
+`LessonMemory`, `CompactionResult`, memory import/export, and
 `entropy-loop memory-demo` — deterministic lesson deduplication (by fingerprint
-or category), minimum-occurrence and count caps, and drop-empty hygiene. No
-version bump until a release is cut.
+or category), minimum-occurrence and count caps, and drop-empty hygiene.
+
+## v0.5.0 — Regression pack + CI gate (in progress)
+
+Turn agent failures into portable CI checks. `RegressionPack`,
+`RegressionPackRunner`, JSON/JUnit reports, and `entropy-loop run-pack` with
+stable exit codes (0/1/2) so a reappearing regression fails the build. No version
+bump until a release is cut.
 
 ## Later / not now
 
