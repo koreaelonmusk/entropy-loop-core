@@ -218,7 +218,8 @@ calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
-- **v0.6.0** — agent adapter / live pack refresh *(current)*
+- **v0.7.0** — regression triage / baseline diff *(current)*
+- **v0.6.0** — agent adapter / live pack refresh
 - **v0.5.0** — regression packs / CI gate
 - **v0.4.0** — memory policy / lesson compaction
 - **v0.3.1** — packaging readiness
