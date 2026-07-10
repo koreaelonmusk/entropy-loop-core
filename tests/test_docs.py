@@ -18,7 +18,8 @@ def test_key_docs_exist() -> None:
 def test_readme_has_english_positioning() -> None:
     text = README.read_text(encoding="utf-8")
     assert "AI agents fail in loops." in text
-    assert "human-readable failure console" in text
+    assert "HTML failure consoles" in text
+    assert "stable contracts" in text
 
 
 def test_readme_has_korean_positioning() -> None:

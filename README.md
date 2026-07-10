@@ -1,10 +1,21 @@
-# Entropy Loop Core
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/haetae/haetae_readme_hero_dark.png">
+    <img src="docs/assets/haetae/haetae_readme_hero.png" alt="Entropy Loop Core — Haetae guardian pixel mascot with the Failure to Evidence to Regression Test to CI Gate to Stable Contract pipeline, and JSON, Markdown, JUnit XML, HTML console, and GitHub Action outputs" width="760">
+  </picture>
+</p>
 
-**AI agents fail in loops.** Entropy Loop turns those failures into tests, CI
-evidence, JUnit reports, and a human-readable failure console.
+<h1 align="center">Entropy Loop Core</h1>
 
-> **한국어:** Entropy Loop는 AI 에이전트 실패를 테스트, CI 증거, JUnit 리포트,
-> 그리고 사람이 읽는 실패 콘솔로 변환합니다.
+<p align="center">
+  <b>AI agents fail in loops.</b> Entropy Loop turns those failures into tests, CI
+  evidence, JUnit reports, HTML failure consoles, and stable contracts.
+</p>
+
+<p align="center">
+  <sub><b>한국어:</b> Entropy Loop는 AI 에이전트 실패를 테스트, CI 증거, JUnit 리포트,
+  사람이 읽는 실패 콘솔, 안정성 계약으로 변환합니다.</sub>
+</p>
 
 [![PyPI](https://img.shields.io/pypi/v/entropy-loop-core.svg)](https://pypi.org/project/entropy-loop-core/)
 [![CI](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml/badge.svg)](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml)
@@ -12,7 +23,7 @@ evidence, JUnit reports, and a human-readable failure console.
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
-[Get started](#get-started) · [Example](#example) · [CLI](#cli) · [Architecture](#architecture) · [Releases](#releases) · [Contributing](#contributing)
+[Get started](#get-started) · [Example](#example) · [Output surfaces](#output-surfaces) · [CLI](#cli) · [Haetae Guardian](#haetae-guardian) · [Releases](#releases)
 
 > Star the repo if you want to follow the Failure Compiler roadmap.
 
@@ -48,6 +59,14 @@ The core is deterministic: no LLM calls, no network calls, no hidden state.
 ```bash
 pip install entropy-loop-core
 entropy-loop replay-demo
+```
+
+Or pin the current release and generate CI evidence plus the stability contract:
+
+```bash
+pip install entropy-loop-core==0.9.0
+entropy-loop ci-demo    # write a local CI evidence bundle from a triage
+entropy-loop contract   # print the deterministic v1 stability contract (JSON)
 ```
 
 Works on Windows, macOS, and Linux with Python 3.10+.
@@ -259,6 +278,21 @@ When pinned to a semver tag (e.g. `@v0.8.0`) with no `package-version`, the Acti
 installs the matching PyPI version (`entropy-loop-core==0.8.0`). On a branch ref
 like `main` it installs the latest; set `package-version` for reproducible CI.
 
+## Output surfaces
+
+One failure trace, read five ways — plus the contract that keeps them stable:
+
+| Surface | Purpose |
+|---|---|
+| JSON | Machine-readable regression data |
+| Markdown | Human-readable report |
+| JUnit XML | CI-native test reporting |
+| HTML Console | Visual [Pixel Failure Console](docs/html-report.md) |
+| GitHub Action | CI evidence generation |
+| Stability Contract | Stable behavior boundary |
+
+All of these are written as local files. No telemetry, no hidden network calls.
+
 ## What it is / what it is not
 
 **It is**
@@ -290,13 +324,68 @@ Deeper reading: [architecture](docs/architecture.md) ·
 [research influences](docs/research-influences.md) ·
 [recording the demo](docs/demo.md).
 
-## Public / private boundary
+## Haetae Guardian
 
-> **Open-source the primitive, not the private advantage.**
+<p align="center">
+  <img src="docs/assets/haetae/haetae_clean.png" alt="Haetae guardian pixel mascot" width="180">
+</p>
 
-This repository contains only generic reliability primitives — no business logic,
-proprietary prompts, customer data, secrets, external AI API calls, or network
-calls. See [docs/public-private-boundary.md](docs/public-private-boundary.md).
+Haetae is the guardian mascot of Entropy Loop Core.
+
+In this project, Haetae represents failure evidence, reliability boundaries, and
+regression memory. It watches the loop, preserves the evidence, and protects the
+reliability boundary — the mascot is a brand layer, never part of the core logic.
+
+Entropy Loop does not claim to magically fix AI systems. It preserves failures as
+evidence, turns them into repeatable checks, and makes regressions visible in CI.
+
+> **한국어:** 해태는 실패 증거, 신뢰 경계, 회귀 기억을 지키는 Entropy Loop Core의
+> 수호자입니다.
+
+The mascot is derived from an original pixel-art source
+([`docs/assets/haetae/haetae_original.json`](docs/assets/haetae/haetae_original.json),
+preserved unmodified). All launch imagery lives locally under
+[`docs/assets/haetae/`](docs/assets/haetae/) — no external CDN, no remote images.
+
+## The loop
+
+```text
+AI agent failure
+        ↓
+Captured evidence
+        ↓
+Replayable regression case
+        ↓
+CI report
+        ↓
+Stable contract
+```
+
+## Boundaries
+
+Entropy Loop Core is intentionally narrow.
+
+**It does not**
+
+- perform root-cause analysis,
+- guarantee correctness,
+- self-heal code,
+- call external services by default,
+- send telemetry,
+- require hidden network access.
+
+**It does**
+
+- preserve failure evidence,
+- generate regression artifacts,
+- produce CI-readable outputs,
+- expose stable behavior contracts,
+- keep local, deterministic workflows.
+
+> **Open-source the primitive, not the private advantage.** This repository
+> contains only generic reliability primitives — no business logic, proprietary
+> prompts, customer data, secrets, external AI API calls, or network calls. See
+> [docs/public-private-boundary.md](docs/public-private-boundary.md).
 
 ## Releases
 
