@@ -1,7 +1,10 @@
 # Entropy Loop Core
 
-**A Failure Compiler for AI agents.** Turn failed agent outputs into regression
-cases and replay them before the same bug ships again.
+**AI agents fail in loops.** Entropy Loop turns those failures into tests, CI
+evidence, JUnit reports, and a human-readable failure console.
+
+> **한국어:** Entropy Loop는 AI 에이전트 실패를 테스트, CI 증거, JUnit 리포트,
+> 그리고 사람이 읽는 실패 콘솔로 변환합니다.
 
 [![PyPI](https://img.shields.io/pypi/v/entropy-loop-core.svg)](https://pypi.org/project/entropy-loop-core/)
 [![CI](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml/badge.svg)](https://github.com/koreaelonmusk/entropy-loop-core/actions/workflows/ci.yml)
@@ -14,6 +17,31 @@ cases and replay them before the same bug ships again.
 > Star the repo if you want to follow the Failure Compiler roadmap.
 
 ![Entropy Loop Core replay demo](./docs/assets/demo.gif)
+
+Verify agent outputs, capture failures, compile them into regression cases, and
+gate CI on them — then read the result three ways:
+
+- **Machines read JUnit.** `--junit-report` emits CI-native XML for GitHub
+  Actions, GitLab CI, Jenkins, CircleCI, and other test reporters.
+- **Humans read the Pixel Failure Console.** `--html-report` writes a
+  self-contained HTML report — inline CSS only, no network, no JS.
+- **Teams read the Stability Contract.** `entropy-loop contract` declares the
+  public API, CLI, exit codes, evidence bundle, and boundaries as JSON.
+
+```text
+┌─ Entropy Loop Failure Console ──────────────────────────────┐
+│ AI agent regressions as CI evidence                         │
+│                                                             │
+│   TOTAL 3    NEW 1    PERSISTENT 0    RESOLVED 1    SKIP 0   │
+│                                                             │
+│   [FAIL]  1 new failures, 1 fixed, 1 passing                │
+│                                                             │
+│   New Failures:    json-1                                   │
+│   Resolved Cases:  json-2                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+The core is deterministic: no LLM calls, no network calls, no hidden state.
 
 ## Get started
 
@@ -134,6 +162,7 @@ entropy-loop pack-demo     # build, save, load, and run a regression pack
 entropy-loop agent-demo    # refresh a pack from an agent, then run it
 entropy-loop triage-demo   # diff a baseline run against a current run
 entropy-loop ci-demo       # write a CI evidence bundle from a triage
+entropy-loop contract      # print the deterministic v1 stability contract (JSON)
 entropy-loop demo          # run the loop: verify → trace → learn → retry → regress
 entropy-loop doctor        # health-check the install
 ```
@@ -170,13 +199,25 @@ newly introduced regressions:
 
 ```bash
 entropy-loop compare-reports reports/baseline.json reports/current.json \
-  --markdown-report reports/triage.md \
-  --fail-on new-failures
+  --fail-on new-failures \
+  --junit-report reports/entropy-loop-junit.xml \
+  --html-report reports/entropy-loop.html
 ```
 
 `compare-reports` classifies each case as newly failing, fixed, persistent, or
 missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
-2 = bad input). See [docs/regression-triage.md](docs/regression-triage.md).
+2 = bad input). It can emit JSON, Markdown, JUnit XML, and a self-contained HTML
+[Pixel Failure Console](docs/html-report.md) — see also
+[docs/regression-triage.md](docs/regression-triage.md).
+
+The console speaks English and Korean (`--html-locale en|ko`):
+
+```bash
+entropy-loop compare-reports examples/baseline_regression_report.json examples/current_regression_report.json \
+  --fail-on new-failures \
+  --html-report reports/entropy-loop-ko.html \
+  --html-locale ko
+```
 
 ## Use it in GitHub Actions
 
@@ -189,14 +230,30 @@ missing, and exits `1` only when the policy trips (0 = pass, 1 = policy fails,
     fail-on: new-failures
     evidence-dir: reports/entropy-loop-evidence
     junit-report: reports/entropy-loop-junit.xml
+    html-report: reports/entropy-loop.html
+    html-locale: en
     write-step-summary: true
 ```
 
 This writes a local CI evidence bundle and can append a summary to the GitHub
-Actions step summary. The optional `junit-report` emits a deterministic JUnit XML
-file that GitHub Actions, GitLab CI, Jenkins, CircleCI, and other test reporters
-can consume. It does not call the GitHub API, comment on PRs, upload artifacts, or
-require `GITHUB_TOKEN`. See [docs/ci-evidence.md](docs/ci-evidence.md).
+Actions step summary. The optional `junit-report` emits deterministic JUnit XML
+for GitHub Actions, GitLab CI, Jenkins, CircleCI, and other test reporters;
+`html-report` writes the self-contained [Pixel Failure Console](docs/html-report.md).
+It does not call the GitHub API, comment on PRs, upload artifacts, or require
+`GITHUB_TOKEN`. See [docs/ci-evidence.md](docs/ci-evidence.md).
+
+## Stability contract
+
+`entropy-loop contract` prints a deterministic JSON manifest of everything this
+project keeps stable — public API, CLI commands, exit codes (`0` pass, `1` policy
+fail, `2` usage/write error), the default evidence bundle files, report outputs,
+and the GitHub Action boundary:
+
+```bash
+entropy-loop contract --output entropy-loop-contract.json
+```
+
+See [docs/stability-contract.md](docs/stability-contract.md).
 
 When pinned to a semver tag (e.g. `@v0.8.0`) with no `package-version`, the Action
 installs the matching PyPI version (`entropy-loop-core==0.8.0`). On a branch ref

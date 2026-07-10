@@ -43,6 +43,8 @@ jobs:
           fail-on: never
           evidence-dir: reports/entropy-loop-evidence
           junit-report: reports/entropy-loop-junit.xml
+          html-report: reports/entropy-loop.html
+          html-locale: en
           write-step-summary: true
           install-package: false
 
@@ -68,6 +70,29 @@ jobs:
           assert root.find("testsuite") is not None
           print("junit xml ok")
           PY
+
+      - name: Verify HTML report
+        run: |
+          test -f reports/entropy-loop.html
+          grep -q "Entropy Loop Failure Console" reports/entropy-loop.html
+          grep -q "AI agent regressions as CI evidence" reports/entropy-loop.html
+          grep -q "JUnit failures indicate reported regression/test state" reports/entropy-loop.html
+          grep -q "prefers-reduced-motion" reports/entropy-loop.html
+          # Self-contained: no external resources.
+          ! grep -q "http://" reports/entropy-loop.html
+          ! grep -q "https://" reports/entropy-loop.html
+
+      - name: Verify Korean HTML report
+        run: |
+          entropy-loop compare-reports examples/baseline_regression_report.json examples/current_regression_report.json \
+            --fail-on never \
+            --html-report /tmp/entropy-loop-ko.html \
+            --html-locale ko
+          test -f /tmp/entropy-loop-ko.html
+          grep -q "엔트로피 루프 실패 콘솔" /tmp/entropy-loop-ko.html
+          grep -q "AI 에이전트 회귀를 CI 증거로 변환" /tmp/entropy-loop-ko.html
+          ! grep -q "http://" /tmp/entropy-loop-ko.html
+          ! grep -q "https://" /tmp/entropy-loop-ko.html
 
       - name: Verify step summary generation
         run: |
