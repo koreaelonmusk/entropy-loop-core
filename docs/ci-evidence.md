@@ -144,6 +144,21 @@ timestamps or hostnames, so it is byte-identical across runs on the same input.
 `--junit-report` writes an extra file; it does **not** change the default 4-file
 evidence bundle.
 
+## Human-readable HTML report
+
+For people rather than machines, `--html-report` writes a self-contained
+[Pixel Failure Console](html-report.md) — a single HTML file with inline CSS and
+no external resources. It combines with the JSON/Markdown/JUnit outputs and, like
+JUnit, is written outside the default bundle:
+
+```bash
+entropy-loop write-ci-evidence baselines/entropy-loop.json reports/current.json \
+  --fail-on new-failures \
+  --evidence-dir reports/entropy-loop-evidence \
+  --junit-report reports/entropy-loop-junit.xml \
+  --html-report reports/entropy-loop.html
+```
+
 ## Self-test
 
 The repository dogfoods its own Action: `.github/workflows/action-self-test.yml`

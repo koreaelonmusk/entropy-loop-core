@@ -26,7 +26,9 @@ from .ci_evidence import (
     CIEvidenceWriter,
     append_github_step_summary,
 )
+from .contract import export_stability_contract_json, write_stability_contract_json
 from .evaluation import summarize
+from .html_report import write_regression_triage_html
 from .lessons import LessonGenerator
 from .loop import EntropyLoop
 from .memory import MemoryStore
@@ -472,6 +474,9 @@ def compare_reports(
     junit_report: str = typer.Option(
         None, "--junit-report", help="Write a triage JUnit XML report to this path."
     ),
+    html_report: str = typer.Option(
+        None, "--html-report", help="Write a self-contained HTML report to this path."
+    ),
     fail_on: str = typer.Option(
         "new-failures",
         "--fail-on",
@@ -515,6 +520,13 @@ def compare_reports(
             typer.echo(f"error: cannot write junit report: {exc}", err=True)
             raise typer.Exit(code=2) from exc
         typer.echo(f"junit report: {junit_report}")
+    if html_report:
+        try:
+            write_regression_triage_html(triage, html_report)
+        except OSError as exc:
+            typer.echo(f"error: cannot write html report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"html report: {html_report}")
 
     if not triage.success:
         raise typer.Exit(code=1)
@@ -587,6 +599,9 @@ def write_ci_evidence(
     junit_report: str = typer.Option(
         None, "--junit-report", help="Also write a triage JUnit XML report here."
     ),
+    html_report: str = typer.Option(
+        None, "--html-report", help="Also write a self-contained HTML report here."
+    ),
     github_step_summary: str = typer.Option(
         None, "--github-step-summary", help="Append the step summary to this path."
     ),
@@ -640,6 +655,13 @@ def write_ci_evidence(
             typer.echo(f"error: cannot write junit report: {exc}", err=True)
             raise typer.Exit(code=2) from exc
         typer.echo(f"junit report: {junit_report}")
+    if html_report:
+        try:
+            write_regression_triage_html(triage, html_report)
+        except OSError as exc:
+            typer.echo(f"error: cannot write html report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"html report: {html_report}")
 
     if not no_step_summary:
         if github_step_summary:
@@ -651,6 +673,27 @@ def write_ci_evidence(
 
     if not triage.success:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def contract(
+    output: str = typer.Option(
+        None, "--output", help="Write the stability contract JSON to this path."
+    ),
+) -> None:
+    """Print (or write) the deterministic v1 stability contract as JSON.
+
+    Exit 0 = printed/written, 2 = write error.
+    """
+    if output:
+        try:
+            write_stability_contract_json(output)
+        except OSError as exc:
+            typer.echo(f"error: cannot write contract: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"contract: {output}")
+    else:
+        typer.echo(export_stability_contract_json(), nl=False)
 
 
 @app.command()

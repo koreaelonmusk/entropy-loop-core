@@ -6,6 +6,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Deterministic v1 stability contract manifest
+  (`export_stability_contract`, `export_stability_contract_json`,
+  `write_stability_contract_json`) and `entropy-loop contract`.
+- Deterministic, self-contained HTML report — the Pixel Failure Console
+  (`export_regression_triage_html`, `write_regression_triage_html`).
+- `--html-report` on `entropy-loop compare-reports` and
+  `entropy-loop write-ci-evidence`.
+- Optional `html-report` input on the GitHub Action, and Action self-test
+  coverage that writes and checks the HTML report.
+- `docs/stability-contract.md`, `docs/html-report.md`, and a README launch
+  surface.
+
+### Notes
+
+- This prepares Entropy Loop Core for v1.0.0. The package version remains
+  `0.9.0` until the release-cut PR.
+- HTML reports are deterministic local files with inline CSS only — no external
+  stylesheets, scripts, fonts, images, network calls, telemetry, GitHub API
+  calls, or default artifact upload.
+- The stability contract is deterministic JSON (sorted keys, no timestamps, no
+  absolute paths) declaring the public exports, CLI commands and exit codes, the
+  default evidence bundle files, report outputs, GitHub Action inputs/boundary,
+  and JUnit semantics.
+- This does not add SARIF, GitHub annotations, PR comments, GitHub API calls,
+  telemetry, hidden persistence, or artifact upload by default.
+
 ## [0.9.0] - 2026-07-10
 
 Theme: **CI-native reporter outputs**. Turn AI agent regressions into CI-native

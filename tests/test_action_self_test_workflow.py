@@ -75,3 +75,18 @@ def test_workflow_exercises_junit() -> None:
     assert "junit-report: reports/entropy-loop-junit.xml" in text
     assert "reports/entropy-loop-junit.xml" in text
     assert "xml.etree.ElementTree" in text
+
+
+def test_workflow_exercises_html() -> None:
+    text = _text()
+    # The local Action self-test requests an HTML report and verifies it.
+    assert "html-report: reports/entropy-loop.html" in text
+    assert "Entropy Loop Failure Console" in text
+    assert "AI agent regressions as CI evidence" in text
+    assert "JUnit failures indicate reported regression/test state" in text
+
+
+def test_workflow_html_verify_checks_no_external() -> None:
+    text = _text()
+    assert '! grep -q "http://" reports/entropy-loop.html' in text
+    assert '! grep -q "https://" reports/entropy-loop.html' in text
