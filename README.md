@@ -27,7 +27,7 @@
 
 > Star the repo if you want to follow the Failure Compiler roadmap.
 
-![Entropy Loop Core replay demo](./docs/assets/demo.gif)
+![Entropy Loop Core v1.0.0 demo: version, doctor, replay, CI reports (JSON/Markdown/JUnit/HTML), Korean console, and the stability contract](./docs/assets/demo.gif)
 
 Verify agent outputs, capture failures, compile them into regression cases, and
 gate CI on them — then read the result three ways:
