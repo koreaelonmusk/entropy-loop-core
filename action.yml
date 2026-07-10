@@ -33,6 +33,14 @@ inputs:
     description: "Optional path to write a JUnit XML report. Empty means none."
     required: false
     default: ""
+  html-report:
+    description: "Optional path to write a self-contained HTML report. Empty means none."
+    required: false
+    default: ""
+  html-locale:
+    description: "Locale for the optional HTML report. Supported values: en, ko."
+    required: false
+    default: "en"
   write-step-summary:
     description: "Append a summary to the GitHub Actions step summary."
     required: false
@@ -88,6 +96,10 @@ runs:
         )
         if [ -n "${{ inputs.junit-report }}" ]; then
           ARGS+=(--junit-report "${{ inputs.junit-report }}")
+        fi
+        if [ -n "${{ inputs.html-report }}" ]; then
+          ARGS+=(--html-report "${{ inputs.html-report }}")
+          ARGS+=(--html-locale "${{ inputs.html-locale }}")
         fi
         if [ "${{ inputs.write-step-summary }}" = "true" ]; then
           ARGS+=(--append-github-step-summary)

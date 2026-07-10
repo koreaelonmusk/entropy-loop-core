@@ -39,7 +39,16 @@ from .ci_evidence import (
     append_github_step_summary,
     export_github_step_summary,
 )
+from .contract import (
+    export_stability_contract,
+    export_stability_contract_json,
+    write_stability_contract_json,
+)
 from .evaluation import summarize
+from .html_report import (
+    export_regression_triage_html,
+    write_regression_triage_html,
+)
 from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
 from .memory import MemoryStore
@@ -173,8 +182,11 @@ __all__ = [
     "export_regression_report",
     "export_regression_suite",
     "export_regression_triage",
+    "export_regression_triage_html",
     "export_regression_triage_junit_xml",
     "export_regression_triage_markdown",
+    "export_stability_contract",
+    "export_stability_contract_json",
     "generate_regression_case",
     "import_lesson_memory",
     "import_memory_policy",
@@ -190,8 +202,10 @@ __all__ = [
     "write_json_report",
     "write_junit_report",
     "write_refresh_report",
+    "write_regression_triage_html",
     "write_regression_triage_json",
     "write_regression_triage_junit_xml",
     "write_regression_triage_markdown",
+    "write_stability_contract_json",
     "__version__",
 ]
