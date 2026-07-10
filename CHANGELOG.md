@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-10
+
+Theme: **v1.0.0 launch**. First stable release of the Failure Compiler for AI
+agents. The v1 reliability surface is now declared stable under the Stability
+Contract.
+
+The v1.0.0 launch surface:
+
+- **Stability Contract** — the deterministic v1 behavior boundary
+  (`entropy-loop contract`).
+- **HTML Failure Console** — a self-contained, human-readable failure report.
+- **JUnit XML reporter** — CI-native regression reporting.
+- **GitHub Action CI evidence** — local evidence generation with no GitHub API
+  calls and no artifact upload by default.
+- **Korean/English report support** — bilingual HTML console and README launch
+  copy.
+- **Haetae README launch surface** — the Korean guardian mascot worldview.
+
 ### Added
 
 - Deterministic v1 stability contract manifest
@@ -26,8 +44,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Notes
 
-- This prepares Entropy Loop Core for v1.0.0. The package version remains
-  `0.9.0` until the release-cut PR.
+- This is the v1.0.0 release cut. The package version is bumped from `0.9.0` to
+  `1.0.0`; no core, CLI, JUnit, evidence-bundle, HTML-report, or Action behavior
+  changes ship with this cut.
 - The HTML report supports English and Korean output; the default locale is
   English.
 - HTML reports are deterministic local files with inline CSS only — no external
@@ -367,6 +386,7 @@ lessons and regression cases rather than merely retried.
 - Worked example, architecture/philosophy/roadmap/research docs, a public/private
   boundary policy, and a test suite.
 
+[1.0.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v1.0.0
 [0.9.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.9.0
 [0.8.1]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.1
 [0.8.0]: https://github.com/koreaelonmusk/entropy-loop-core/releases/tag/v0.8.0

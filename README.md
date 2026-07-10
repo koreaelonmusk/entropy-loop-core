@@ -64,7 +64,7 @@ entropy-loop replay-demo
 Or pin the current release and generate CI evidence plus the stability contract:
 
 ```bash
-pip install entropy-loop-core==0.9.0
+pip install entropy-loop-core==1.0.0
 entropy-loop ci-demo    # write a local CI evidence bundle from a triage
 entropy-loop contract   # print the deterministic v1 stability contract (JSON)
 ```
@@ -242,7 +242,7 @@ entropy-loop compare-reports examples/baseline_regression_report.json examples/c
 
 ```yaml
 - name: Compare Entropy Loop reports
-  uses: koreaelonmusk/entropy-loop-core@v0.9.0
+  uses: koreaelonmusk/entropy-loop-core@v1.0.0
   with:
     baseline-report: baselines/entropy-loop.json
     current-report: reports/current.json
@@ -389,7 +389,9 @@ Entropy Loop Core is intentionally narrow.
 
 ## Releases
 
-- **v0.9.0** — CI-native reporter outputs (JUnit XML) *(current)*
+- **v1.0.0** — v1 launch: stability contract, HTML failure console, bilingual
+  reports, and the Haetae README launch surface *(current)*
+- **v0.9.0** — CI-native reporter outputs (JUnit XML)
 - **v0.8.1** — Action runner hardening (self-test)
 - **v0.8.0** — GitHub Action / CI evidence bundle
 - **v0.7.0** — regression triage / baseline diff
