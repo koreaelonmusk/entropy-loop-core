@@ -151,6 +151,7 @@ jobs:
           fail-on: new-failures
           evidence-dir: reports/entropy-loop-evidence
           junit-report: reports/entropy-loop-junit.xml
+          html-report: reports/entropy-loop.html
           write-step-summary: true
 
       - name: Upload Entropy Loop evidence
@@ -169,6 +170,9 @@ Notes:
   explicitly if you want them.
 - The optional `junit-report` input writes a deterministic JUnit XML file that
   test reporters can consume; leave it empty to skip it.
+- The optional `html-report` input writes a self-contained
+  [Pixel Failure Console](html-report.md) HTML file for humans; leave it empty to
+  skip it.
 - `run-pack` may exit `1` when failures exist, so CI examples may use `|| true`
   before the Action; `write-ci-evidence` then decides whether the job fails,
   based on `fail-on`.

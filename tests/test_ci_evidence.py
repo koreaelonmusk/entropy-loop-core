@@ -234,3 +234,26 @@ def test_action_yml_junit_passthrough_is_conditional() -> None:
 
 def test_action_yml_no_artifact_upload() -> None:
     assert "upload-artifact" not in ACTION_YML.read_text()
+
+
+def test_action_yml_has_html_report_input() -> None:
+    assert "html-report:" in ACTION_YML.read_text()
+
+
+def test_action_yml_html_passthrough_is_conditional() -> None:
+    text = ACTION_YML.read_text()
+    assert 'if [ -n "${{ inputs.html-report }}" ]' in text
+    assert "--html-report" in text
+    # junit passthrough still present
+    assert 'if [ -n "${{ inputs.junit-report }}" ]' in text
+
+
+def test_action_yml_has_html_locale_input() -> None:
+    assert "html-locale:" in ACTION_YML.read_text()
+
+
+def test_action_yml_html_locale_passed_only_with_html() -> None:
+    text = ACTION_YML.read_text()
+    # --html-locale lives inside the html-report conditional block.
+    block = text.split('if [ -n "${{ inputs.html-report }}" ]', 1)[1]
+    assert "--html-locale" in block.split("fi", 1)[0]

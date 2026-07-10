@@ -343,6 +343,111 @@ def test_compare_reports_junit_combines_with_json_markdown(tmp_path) -> None:
     assert jp.exists() and mp.exists() and xp.exists()
 
 
+def test_contract_command_exits_0() -> None:
+    import json
+
+    result = runner.invoke(app, ["contract"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["project"] == "entropy-loop-core"
+    assert data["contract_version"] == "1"
+
+
+def test_contract_command_writes_output(tmp_path) -> None:
+    import json
+
+    out = tmp_path / "out" / "contract.json"
+    result = runner.invoke(app, ["contract", "--output", str(out)])
+    assert result.exit_code == 0
+    assert out.exists()
+    assert json.loads(out.read_text())["project"] == "entropy-loop-core"
+
+
+def test_compare_reports_writes_html(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    hp = tmp_path / "out" / "report.html"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app, ["compare-reports", str(base), str(curr), "--html-report", str(hp)]
+    )
+    assert result.exit_code == 1  # new failure
+    assert hp.exists()
+    assert "Entropy Loop Failure Console" in hp.read_text()
+
+
+def test_compare_reports_writes_korean_html(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    hp = tmp_path / "ko.html"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app,
+        [
+            "compare-reports",
+            str(base),
+            str(curr),
+            "--html-report",
+            str(hp),
+            "--html-locale",
+            "ko",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "엔트로피 루프 실패 콘솔" in hp.read_text()
+
+
+def test_compare_reports_invalid_locale_exits_2(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    result = runner.invoke(
+        app,
+        [
+            "compare-reports",
+            str(base),
+            str(curr),
+            "--html-report",
+            str(tmp_path / "x.html"),
+            "--html-locale",
+            "de",
+        ],
+    )
+    assert result.exit_code == 2
+
+
+def test_compare_reports_combines_all_outputs(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    jp = tmp_path / "r.json"
+    mp = tmp_path / "r.md"
+    xp = tmp_path / "r.xml"
+    hp = tmp_path / "r.html"
+    result = runner.invoke(
+        app,
+        [
+            "compare-reports",
+            str(base),
+            str(curr),
+            "--json-report",
+            str(jp),
+            "--markdown-report",
+            str(mp),
+            "--junit-report",
+            str(xp),
+            "--html-report",
+            str(hp),
+        ],
+    )
+    assert result.exit_code == 0
+    assert jp.exists() and mp.exists() and xp.exists() and hp.exists()
+
+
 def test_ci_demo_runs() -> None:
     result = runner.invoke(app, ["ci-demo"])
     assert result.exit_code == 0
@@ -414,6 +519,73 @@ def test_write_ci_evidence_writes_junit_outside_bundle(tmp_path) -> None:
         "triage.json",
         "triage.md",
     ]
+
+
+def test_write_ci_evidence_writes_html_outside_bundle(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    ev = tmp_path / "evidence"
+    hp = tmp_path / "report.html"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("failed", "boom")})
+    result = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(ev),
+            "--html-report",
+            str(hp),
+        ],
+    )
+    assert result.exit_code == 1  # new failure
+    assert hp.exists()
+    assert "Entropy Loop Failure Console" in hp.read_text()
+    # Default bundle is still exactly 4 files.
+    assert sorted(p.name for p in ev.iterdir()) == [
+        "manifest.json",
+        "summary.txt",
+        "triage.json",
+        "triage.md",
+    ]
+
+
+def test_write_ci_evidence_korean_html_and_invalid_locale(tmp_path) -> None:
+    base = tmp_path / "baseline.json"
+    curr = tmp_path / "current.json"
+    _write_report(base, {"a": ("passed", None)})
+    _write_report(curr, {"a": ("passed", None)})
+    ko = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(tmp_path / "e"),
+            "--html-report",
+            str(tmp_path / "ko.html"),
+            "--html-locale",
+            "ko",
+        ],
+    )
+    assert ko.exit_code == 0
+    assert "엔트로피 루프 실패 콘솔" in (tmp_path / "ko.html").read_text()
+    bad = runner.invoke(
+        app,
+        [
+            "write-ci-evidence",
+            str(base),
+            str(curr),
+            "--evidence-dir",
+            str(tmp_path / "e2"),
+            "--html-locale",
+            "de",
+        ],
+    )
+    assert bad.exit_code == 2
 
 
 def test_write_ci_evidence_never_policy(tmp_path) -> None:

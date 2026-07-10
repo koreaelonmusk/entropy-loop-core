@@ -26,7 +26,9 @@ from .ci_evidence import (
     CIEvidenceWriter,
     append_github_step_summary,
 )
+from .contract import export_stability_contract_json, write_stability_contract_json
 from .evaluation import summarize
+from .html_report import HTML_LOCALES, write_regression_triage_html
 from .lessons import LessonGenerator
 from .loop import EntropyLoop
 from .memory import MemoryStore
@@ -472,6 +474,12 @@ def compare_reports(
     junit_report: str = typer.Option(
         None, "--junit-report", help="Write a triage JUnit XML report to this path."
     ),
+    html_report: str = typer.Option(
+        None, "--html-report", help="Write a self-contained HTML report to this path."
+    ),
+    html_locale: str = typer.Option(
+        "en", "--html-locale", help="HTML report locale: en | ko."
+    ),
     fail_on: str = typer.Option(
         "new-failures",
         "--fail-on",
@@ -481,8 +489,11 @@ def compare_reports(
     """Diff a baseline report against a current one and explain what changed.
 
     Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
-    invalid JSON, invalid policy, or report write error).
+    invalid JSON, invalid policy, invalid locale, or report write error).
     """
+    if html_locale not in HTML_LOCALES:
+        typer.echo(f"error: invalid html locale: {html_locale}", err=True)
+        raise typer.Exit(code=2)
     try:
         policy = TriagePolicy(fail_on=fail_on)
     except Exception as exc:  # noqa: BLE001 - invalid policy is a usage error (exit 2)
@@ -515,6 +526,13 @@ def compare_reports(
             typer.echo(f"error: cannot write junit report: {exc}", err=True)
             raise typer.Exit(code=2) from exc
         typer.echo(f"junit report: {junit_report}")
+    if html_report:
+        try:
+            write_regression_triage_html(triage, html_report, locale=html_locale)
+        except OSError as exc:
+            typer.echo(f"error: cannot write html report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"html report: {html_report}")
 
     if not triage.success:
         raise typer.Exit(code=1)
@@ -587,6 +605,12 @@ def write_ci_evidence(
     junit_report: str = typer.Option(
         None, "--junit-report", help="Also write a triage JUnit XML report here."
     ),
+    html_report: str = typer.Option(
+        None, "--html-report", help="Also write a self-contained HTML report here."
+    ),
+    html_locale: str = typer.Option(
+        "en", "--html-locale", help="HTML report locale: en | ko."
+    ),
     github_step_summary: str = typer.Option(
         None, "--github-step-summary", help="Append the step summary to this path."
     ),
@@ -602,9 +626,13 @@ def write_ci_evidence(
     """Compare two reports and write a CI evidence bundle.
 
     Exit 0 = policy passes, 1 = policy fails, 2 = bad input (missing file,
-    invalid JSON, invalid policy, or report write error). The default evidence
-    bundle is unchanged; ``--junit-report`` writes an extra file, not into it.
+    invalid JSON, invalid policy, invalid locale, or report write error). The
+    default evidence bundle is unchanged; ``--junit-report`` and ``--html-report``
+    write extra files, not into it.
     """
+    if html_locale not in HTML_LOCALES:
+        typer.echo(f"error: invalid html locale: {html_locale}", err=True)
+        raise typer.Exit(code=2)
     try:
         policy = TriagePolicy(fail_on=fail_on)
     except Exception as exc:  # noqa: BLE001 - invalid policy is a usage error (exit 2)
@@ -640,6 +668,13 @@ def write_ci_evidence(
             typer.echo(f"error: cannot write junit report: {exc}", err=True)
             raise typer.Exit(code=2) from exc
         typer.echo(f"junit report: {junit_report}")
+    if html_report:
+        try:
+            write_regression_triage_html(triage, html_report, locale=html_locale)
+        except OSError as exc:
+            typer.echo(f"error: cannot write html report: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"html report: {html_report}")
 
     if not no_step_summary:
         if github_step_summary:
@@ -651,6 +686,27 @@ def write_ci_evidence(
 
     if not triage.success:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def contract(
+    output: str = typer.Option(
+        None, "--output", help="Write the stability contract JSON to this path."
+    ),
+) -> None:
+    """Print (or write) the deterministic v1 stability contract as JSON.
+
+    Exit 0 = printed/written, 2 = write error.
+    """
+    if output:
+        try:
+            write_stability_contract_json(output)
+        except OSError as exc:
+            typer.echo(f"error: cannot write contract: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        typer.echo(f"contract: {output}")
+    else:
+        typer.echo(export_stability_contract_json(), nl=False)
 
 
 @app.command()
