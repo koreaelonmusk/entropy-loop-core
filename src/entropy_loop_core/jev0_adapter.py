@@ -50,7 +50,7 @@ def validate_jev0_failure(record: Any) -> dict[str, Any]:
         raise Jev0FailureImportError("unsupported jev0 failure schema_version")
     if record["kind"] != JEV0_FAILURE_KIND:
         raise Jev0FailureImportError("invalid jev0 failure kind")
-    if record["action"] not in {"staged", "workspace", "range", "run"}:
+    if record["action"] not in {"staged", "workspace", "range", "run", "supervise"}:
         raise Jev0FailureImportError("unsupported jev0 failure action")
     if not isinstance(record["reason"], str) or not record["reason"]:
         raise Jev0FailureImportError("jev0 failure reason must be non-empty")

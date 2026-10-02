@@ -75,3 +75,9 @@ def test_import_does_not_invent_original_prompt_or_output():
     serialized = trace.model_dump_json()
     assert "original prompt" not in serialized.lower()
     assert "diff" not in trace.output.content.lower()
+
+
+def test_import_accepts_supervise_action():
+    trace = import_jev0_failure(make_record(action="supervise"))
+    assert trace.task.instruction == "jev0 blocked supervise"
+    assert trace.verification_result.rule_name == "jev0:supervise"
