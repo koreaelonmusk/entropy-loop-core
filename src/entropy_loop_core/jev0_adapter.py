@@ -54,22 +54,23 @@ def validate_jev0_failure(record: Any) -> dict[str, Any]:
         raise Jev0FailureImportError("unsupported jev0 failure action")
     if not isinstance(record["reason"], str) or not record["reason"]:
         raise Jev0FailureImportError("jev0 failure reason must be non-empty")
-    if "\\n" in record["reason"] or "\\r" in record["reason"]:
+    if "\n" in record["reason"] or "\r" in record["reason"]:
         raise Jev0FailureImportError("jev0 failure reason must be one line")
     if not isinstance(record["repository_fingerprint"], str):
         raise Jev0FailureImportError("repository_fingerprint must be a string")
     if len(record["repository_fingerprint"]) != 64:
         raise Jev0FailureImportError("repository_fingerprint must be SHA-256")
-    if any(ch not in "0123456789abcdef" for ch in record["repository_fingerprint"]):
+    if any(
+        ch not in "0123456789abcdef" for ch in record["repository_fingerprint"]
+    ):
         raise Jev0FailureImportError("repository_fingerprint must be lowercase hex")
-    for key in ("policy_sha256",):
-        value = record[key]
-        if value is not None and (
-            not isinstance(value, str)
-            or len(value) != 64
-            or any(ch not in "0123456789abcdef" for ch in value)
-        ):
-            raise Jev0FailureImportError(f"{key} must be null or SHA-256")
+    value = record["policy_sha256"]
+    if value is not None and (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(ch not in "0123456789abcdef" for ch in value)
+    ):
+        raise Jev0FailureImportError("policy_sha256 must be null or SHA-256")
     head = record["head_sha"]
     if head is not None and (
         not isinstance(head, str)
