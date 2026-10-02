@@ -54,8 +54,7 @@ def validate_jev0_failure(record: Any) -> dict[str, Any]:
         raise Jev0FailureImportError("unsupported jev0 failure action")
     if not isinstance(record["reason"], str) or not record["reason"]:
         raise Jev0FailureImportError("jev0 failure reason must be non-empty")
-    if "
-" in record["reason"] or "" in record["reason"]:
+    if "\\n" in record["reason"] or "\\r" in record["reason"]:
         raise Jev0FailureImportError("jev0 failure reason must be one line")
     if not isinstance(record["repository_fingerprint"], str):
         raise Jev0FailureImportError("repository_fingerprint must be a string")
