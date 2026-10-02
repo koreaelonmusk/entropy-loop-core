@@ -49,6 +49,12 @@ from .html_report import (
     export_regression_triage_html,
     write_regression_triage_html,
 )
+from .jev0_adapter import (
+    Jev0FailureImportError,
+    compile_jev0_failure,
+    import_jev0_failure,
+    validate_jev0_failure,
+)
 from .lessons import LessonGenerator
 from .loop import Agent, EntropyLoop
 from .memory import MemoryStore
@@ -139,6 +145,7 @@ __all__ = [
     "EvaluationSummary",
     "FailureCategory",
     "FailureTrace",
+    "Jev0FailureImportError",
     "Lesson",
     "LessonCompactor",
     "LessonGenerator",
@@ -187,7 +194,9 @@ __all__ = [
     "export_regression_triage_markdown",
     "export_stability_contract",
     "export_stability_contract_json",
+    "compile_jev0_failure",
     "generate_regression_case",
+    "import_jev0_failure",
     "import_lesson_memory",
     "import_memory_policy",
     "import_regression_pack",
@@ -199,6 +208,7 @@ __all__ = [
     "save_regression_pack",
     "save_regression_suite",
     "summarize",
+    "validate_jev0_failure",
     "write_json_report",
     "write_junit_report",
     "write_refresh_report",
