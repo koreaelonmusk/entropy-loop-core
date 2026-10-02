@@ -20,9 +20,15 @@ def make_record(**overrides):
     }
     unsigned.update(overrides)
     payload = json.dumps(
-        unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        unsigned,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
     ).encode("utf-8")
-    return {**unsigned, "failure_id": hashlib.sha256(payload).hexdigest()}
+    return {
+        **unsigned,
+        "failure_id": hashlib.sha256(payload).hexdigest(),
+    }
 
 
 def test_import_jev0_failure_preserves_contract_boundary():
