@@ -60,9 +60,7 @@ def validate_jev0_failure(record: Any) -> dict[str, Any]:
         raise Jev0FailureImportError("repository_fingerprint must be a string")
     if len(record["repository_fingerprint"]) != 64:
         raise Jev0FailureImportError("repository_fingerprint must be SHA-256")
-    if any(
-        ch not in "0123456789abcdef" for ch in record["repository_fingerprint"]
-    ):
+    if any(ch not in "0123456789abcdef" for ch in record["repository_fingerprint"]):
         raise Jev0FailureImportError("repository_fingerprint must be lowercase hex")
     value = record["policy_sha256"]
     if value is not None and (
