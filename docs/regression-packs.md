@@ -43,7 +43,9 @@ Packs are written as JSON with stable key ordering, so diffs stay reviewable.
 from entropy_loop_core import RegressionPackRunner
 
 result = RegressionPackRunner().run_pack(pack)
-print(\n    result.summary\n)  # "Regression pack `...` completed: 3 passed, 0 failed, 0 skipped."
+print(
+    result.summary
+)  # "Regression pack `...` completed: 3 passed, 0 failed, 0 skipped."
 ```
 
 Each case with a reference output is replayed through the pack's policy (reusing
