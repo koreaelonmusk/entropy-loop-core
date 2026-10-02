@@ -46,6 +46,7 @@ From Python:
 
 ```python
 from entropy_loop_core import write_regression_triage_html
+
 write_regression_triage_html(triage, "reports/entropy-loop.html")
 ```
 
