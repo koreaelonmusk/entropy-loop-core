@@ -166,7 +166,6 @@ def compile_extropy_failure(record: Any) -> RegressionCase:
     return generate_regression_case(import_extropy_failure(record))
 
 
-
 def build_extropy_regression_artifact(record: Any) -> dict[str, Any]:
     """Compile one Extropy failure into a portable invariant-replay artifact.
 
