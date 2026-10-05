@@ -1,8 +1,9 @@
-"""Strict adapter from extropy-failure/v1 into entropy-loop-core failures.
+"""Strict adapters from Extropy failure contracts into entropy-loop-core.
 
-The contract is intentionally public-safe and raw-diff-free. Extropy exports only
-content-addressed execution/delta identity plus the typed failure verdict needed
-to compile a deterministic regression case.
+v1 preserves the original public-safe failure identity contract. v2 additionally
+binds content-addressed tool-input and minimum-change policy digests so a future
+replay must exercise the same invariant-relevant test vector without storing raw
+input, raw diff, prompt text, or repository path lists.
 """
 
 from __future__ import annotations
@@ -127,8 +128,6 @@ def _validate_extropy_failure_v2(record: Any) -> dict[str, Any]:
     if record["schema_version"] != EXTROPY_FAILURE_SCHEMA_VERSION_V2:
         raise ExtropyFailureImportError("unsupported extropy failure v2 schema_version")
 
-    # Reuse all v1 field semantics by validating a projected v1-shaped record
-    # with a version-adjusted digest rebuilt only for structural checks.
     for key in ("kind", "failure_type", "work_id", "run_id", "capability_id"):
         if key == "kind":
             if record[key] != EXTROPY_FAILURE_KIND:
