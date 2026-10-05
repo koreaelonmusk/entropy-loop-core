@@ -46,10 +46,15 @@ from .contract import (
 )
 from .evaluation import summarize
 from .extropy_adapter import (
+    EXTROPY_REGRESSION_ARTIFACT_KIND,
+    EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION,
+    EXTROPY_REGRESSION_REPLAY_KIND,
     ExtropyFailureImportError,
+    build_extropy_regression_artifact,
     compile_extropy_failure,
     import_extropy_failure,
     validate_extropy_failure,
+    validate_extropy_regression_artifact,
 )
 from .html_report import (
     export_regression_triage_html,
@@ -149,6 +154,9 @@ __all__ = [
     "CompactionResult",
     "EntropyLoop",
     "EvaluationSummary",
+    "EXTROPY_REGRESSION_ARTIFACT_KIND",
+    "EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION",
+    "EXTROPY_REGRESSION_REPLAY_KIND",
     "ExtropyFailureImportError",
     "FailureCategory",
     "FailureTrace",
@@ -201,6 +209,7 @@ __all__ = [
     "export_regression_triage_markdown",
     "export_stability_contract",
     "export_stability_contract_json",
+    "build_extropy_regression_artifact",
     "compile_extropy_failure",
     "compile_jev0_failure",
     "generate_regression_case",
@@ -218,6 +227,7 @@ __all__ = [
     "save_regression_suite",
     "summarize",
     "validate_extropy_failure",
+    "validate_extropy_regression_artifact",
     "validate_jev0_failure",
     "write_json_report",
     "write_junit_report",

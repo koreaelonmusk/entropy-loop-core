@@ -3,7 +3,12 @@ import json
 
 import pytest
 
-from entropy_loop_core import compile_extropy_failure, import_extropy_failure
+from entropy_loop_core import (
+    build_extropy_regression_artifact,
+    compile_extropy_failure,
+    import_extropy_failure,
+    validate_extropy_regression_artifact,
+)
 from entropy_loop_core.extropy_adapter import ExtropyFailureImportError
 
 
@@ -97,3 +102,49 @@ def test_import_does_not_invent_prompt_diff_or_path_list():
     assert "original prompt" not in serialized
     assert "unexpected_paths" not in serialized
     assert "raw diff" not in trace.output.content.lower()
+
+
+def test_build_extropy_regression_artifact_is_content_free_and_digest_bound():
+    artifact = build_extropy_regression_artifact(make_record())
+    assert artifact["schema_version"] == 1
+    assert artifact["kind"] == "extropy-regression-artifact"
+    assert artifact["replay_kind"] == "ENTROPY_DELTA_INVARIANT"
+    assert artifact["failure_type"] == "SCOPE_DRIFT"
+    assert artifact["expected_rule"] == "extropy:entropy-delta:SCOPE_DRIFT"
+    assert artifact["source_revision"] == "c" * 40
+    assert len(artifact["artifact_id"]) == 64
+    serialized = json.dumps(artifact, sort_keys=True).lower()
+    assert "unexpected_paths" not in serialized
+    assert "raw_diff" not in serialized
+    assert "prompt" not in serialized
+
+
+def test_validate_extropy_regression_artifact_rejects_tampering():
+    artifact = build_extropy_regression_artifact(make_record())
+    artifact["expected_rule"] = "extropy:entropy-delta:REVISION_MISMATCH"
+    with pytest.raises(
+        ExtropyFailureImportError,
+        match="expected_rule does not match failure_type",
+    ):
+        validate_extropy_regression_artifact(artifact)
+
+
+def test_validate_extropy_regression_artifact_rejects_schema_smuggling():
+    artifact = build_extropy_regression_artifact(make_record())
+    artifact["raw_diff"] = "forbidden"
+    with pytest.raises(
+        ExtropyFailureImportError,
+        match="artifact keys mismatch",
+    ):
+        validate_extropy_regression_artifact(artifact)
+
+
+@pytest.mark.parametrize(
+    "failure_type",
+    ["SCOPE_DRIFT", "INCOMPLETE_EVIDENCE", "REVISION_MISMATCH"],
+)
+def test_regression_artifact_supports_all_extropy_entropy_failure_types(failure_type):
+    artifact = build_extropy_regression_artifact(make_record(failure_type=failure_type))
+    validated = validate_extropy_regression_artifact(artifact)
+    assert validated["failure_type"] == failure_type
+    assert validated["expected_rule"] == f"extropy:entropy-delta:{failure_type}"
