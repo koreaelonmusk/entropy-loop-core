@@ -104,7 +104,6 @@ def test_import_does_not_invent_prompt_diff_or_path_list():
     assert "raw diff" not in trace.output.content.lower()
 
 
-
 def test_build_extropy_regression_artifact_is_content_free_and_digest_bound():
     artifact = build_extropy_regression_artifact(make_record())
     assert artifact["schema_version"] == 1
@@ -145,9 +144,7 @@ def test_validate_extropy_regression_artifact_rejects_schema_smuggling():
     ["SCOPE_DRIFT", "INCOMPLETE_EVIDENCE", "REVISION_MISMATCH"],
 )
 def test_regression_artifact_supports_all_extropy_entropy_failure_types(failure_type):
-    artifact = build_extropy_regression_artifact(
-        make_record(failure_type=failure_type)
-    )
+    artifact = build_extropy_regression_artifact(make_record(failure_type=failure_type))
     validated = validate_extropy_regression_artifact(artifact)
     assert validated["failure_type"] == failure_type
     assert validated["expected_rule"] == f"extropy:entropy-delta:{failure_type}"
