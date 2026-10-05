@@ -7,6 +7,7 @@ from entropy_loop_core import (
     build_extropy_regression_artifact,
     compile_extropy_failure,
     import_extropy_failure,
+    validate_extropy_failure,
     validate_extropy_regression_artifact,
 )
 from entropy_loop_core.extropy_adapter import ExtropyFailureImportError
@@ -25,6 +26,35 @@ def make_record(**overrides):
         "source_revision": "c" * 40,
         "unexpected_path_count": 1,
         "raw_diff_captured": False,
+    }
+    unsigned.update(overrides)
+    payload = json.dumps(
+        unsigned,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return {
+        **unsigned,
+        "failure_id": hashlib.sha256(payload).hexdigest(),
+    }
+
+
+def make_record_v2(**overrides):
+    unsigned = {
+        "schema_version": 2,
+        "kind": "extropy-failure",
+        "failure_type": "SCOPE_DRIFT",
+        "work_id": "work:1",
+        "run_id": "run:1",
+        "capability_id": "tool/mcp/extropy-local/write_file",
+        "execution_report_sha256": "a" * 64,
+        "entropy_delta_sha256": "b" * 64,
+        "source_revision": "c" * 40,
+        "unexpected_path_count": 1,
+        "raw_diff_captured": False,
+        "input_sha256": "d" * 64,
+        "change_policy_sha256": "e" * 64,
     }
     unsigned.update(overrides)
     payload = json.dumps(
@@ -148,3 +178,49 @@ def test_regression_artifact_supports_all_extropy_entropy_failure_types(failure_
     validated = validate_extropy_regression_artifact(artifact)
     assert validated["failure_type"] == failure_type
     assert validated["expected_rule"] == f"extropy:entropy-delta:{failure_type}"
+
+
+def test_v2_failure_preserves_replay_vector_without_raw_input():
+    trace = import_extropy_failure(make_record_v2())
+    assert trace.task.metadata["source"] == "extropy-failure/v2"
+    assert trace.output.content == ""
+    serialized = trace.model_dump_json().lower()
+    assert "raw_diff" in serialized
+    assert '"raw_diff_captured":false' in serialized
+    assert "input_sha256" not in serialized
+    assert "change_policy_sha256" not in serialized
+
+
+def test_v2_failure_rejects_replay_vector_hash_tampering():
+    record = make_record_v2()
+    record["input_sha256"] = "f" * 64
+    with pytest.raises(ExtropyFailureImportError, match="digest mismatch"):
+        import_extropy_failure(record)
+
+
+def test_v2_regression_artifact_carries_replay_vector():
+    artifact = build_extropy_regression_artifact(make_record_v2())
+    assert artifact["schema_version"] == 2
+    assert artifact["input_sha256"] == "d" * 64
+    assert artifact["change_policy_sha256"] == "e" * 64
+    assert validate_extropy_regression_artifact(artifact) == artifact
+
+
+def test_v2_regression_artifact_rejects_vector_tampering():
+    artifact = build_extropy_regression_artifact(make_record_v2())
+    artifact["change_policy_sha256"] = "f" * 64
+    with pytest.raises(
+        ExtropyFailureImportError,
+        match="artifact digest mismatch",
+    ):
+        validate_extropy_regression_artifact(artifact)
+
+
+def test_v1_failure_and_artifact_remain_compatible():
+    failure = make_record()
+    assert validate_extropy_failure(failure) == failure
+    artifact = build_extropy_regression_artifact(failure)
+    assert artifact["schema_version"] == 1
+    assert "input_sha256" not in artifact
+    assert "change_policy_sha256" not in artifact
+    assert validate_extropy_regression_artifact(artifact) == artifact

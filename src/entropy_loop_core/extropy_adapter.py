@@ -1,8 +1,9 @@
-"""Strict adapter from extropy-failure/v1 into entropy-loop-core failures.
+"""Strict adapters from Extropy failure contracts into entropy-loop-core.
 
-The contract is intentionally public-safe and raw-diff-free. Extropy exports only
-content-addressed execution/delta identity plus the typed failure verdict needed
-to compile a deterministic regression case.
+v1 preserves the original public-safe failure identity contract. v2 additionally
+binds content-addressed tool-input and minimum-change policy digests so a future
+replay must exercise the same invariant-relevant test vector without storing raw
+input, raw diff, prompt text, or repository path lists.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from .regression import generate_regression_case
 from .types import AgentOutput, FailureTrace, RegressionCase, Task, VerificationResult
 
 EXTROPY_FAILURE_SCHEMA_VERSION = 1
+EXTROPY_FAILURE_SCHEMA_VERSION_V2 = 2
 EXTROPY_FAILURE_KIND = "extropy-failure"
 EXTROPY_FAILURE_TYPES = {
     "SCOPE_DRIFT",
@@ -22,6 +24,7 @@ EXTROPY_FAILURE_TYPES = {
     "REVISION_MISMATCH",
 }
 EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION = 1
+EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION_V2 = 2
 EXTROPY_REGRESSION_ARTIFACT_KIND = "extropy-regression-artifact"
 EXTROPY_REGRESSION_REPLAY_KIND = "ENTROPY_DELTA_INVARIANT"
 
@@ -38,6 +41,11 @@ EXTROPY_FAILURE_REQUIRED_KEYS = {
     "unexpected_path_count",
     "raw_diff_captured",
     "failure_id",
+}
+
+EXTROPY_FAILURE_V2_REQUIRED_KEYS = EXTROPY_FAILURE_REQUIRED_KEYS | {
+    "input_sha256",
+    "change_policy_sha256",
 }
 
 
@@ -63,7 +71,7 @@ def _is_lower_sha256(value: Any) -> bool:
     )
 
 
-def validate_extropy_failure(record: Any) -> dict[str, Any]:
+def _validate_extropy_failure_v1(record: Any) -> dict[str, Any]:
     """Validate one strict, raw-diff-free extropy-failure/v1 envelope."""
     if not isinstance(record, dict) or set(record) != EXTROPY_FAILURE_REQUIRED_KEYS:
         raise ExtropyFailureImportError("extropy failure keys mismatch")
@@ -113,11 +121,82 @@ def validate_extropy_failure(record: Any) -> dict[str, Any]:
     return record
 
 
+def _validate_extropy_failure_v2(record: Any) -> dict[str, Any]:
+    """Validate one strict replay-vector-bound extropy-failure/v2 envelope."""
+    if not isinstance(record, dict) or set(record) != EXTROPY_FAILURE_V2_REQUIRED_KEYS:
+        raise ExtropyFailureImportError("extropy failure v2 keys mismatch")
+    if record["schema_version"] != EXTROPY_FAILURE_SCHEMA_VERSION_V2:
+        raise ExtropyFailureImportError("unsupported extropy failure v2 schema_version")
+
+    for key in ("kind", "failure_type", "work_id", "run_id", "capability_id"):
+        if key == "kind":
+            if record[key] != EXTROPY_FAILURE_KIND:
+                raise ExtropyFailureImportError("invalid extropy failure kind")
+        elif key == "failure_type":
+            if record[key] not in EXTROPY_FAILURE_TYPES:
+                raise ExtropyFailureImportError("unsupported extropy failure type")
+        elif (
+            not isinstance(record[key], str)
+            or not record[key].strip()
+            or "\n" in record[key]
+            or "\r" in record[key]
+        ):
+            raise ExtropyFailureImportError(f"{key} must be a non-empty single line")
+
+    for key in (
+        "execution_report_sha256",
+        "entropy_delta_sha256",
+        "input_sha256",
+        "change_policy_sha256",
+    ):
+        if not _is_lower_sha256(record[key]):
+            raise ExtropyFailureImportError(f"{key} must be lowercase SHA-256")
+
+    revision = record["source_revision"]
+    if (
+        not isinstance(revision, str)
+        or len(revision) not in (40, 64)
+        or any(ch not in "0123456789abcdef" for ch in revision)
+    ):
+        raise ExtropyFailureImportError(
+            "source_revision must be a lowercase Git object id"
+        )
+
+    count = record["unexpected_path_count"]
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        raise ExtropyFailureImportError(
+            "unexpected_path_count must be a non-negative integer"
+        )
+    if record["raw_diff_captured"] is not False:
+        raise ExtropyFailureImportError("extropy-failure/v2 must not contain raw diff")
+
+    supplied = record["failure_id"]
+    if not _is_lower_sha256(supplied):
+        raise ExtropyFailureImportError("failure_id must be lowercase SHA-256")
+    unsigned = dict(record)
+    del unsigned["failure_id"]
+    if supplied != _sha256_json(unsigned):
+        raise ExtropyFailureImportError("extropy failure digest mismatch")
+    return record
+
+
+def validate_extropy_failure(record: Any) -> dict[str, Any]:
+    """Validate strict extropy-failure/v1 or replay-vector-bound v2."""
+    if not isinstance(record, dict):
+        raise ExtropyFailureImportError("extropy failure must be an object")
+    version = record.get("schema_version")
+    if version == EXTROPY_FAILURE_SCHEMA_VERSION:
+        return _validate_extropy_failure_v1(record)
+    if version == EXTROPY_FAILURE_SCHEMA_VERSION_V2:
+        return _validate_extropy_failure_v2(record)
+    raise ExtropyFailureImportError("unsupported extropy failure schema_version")
+
+
 def import_extropy_failure(record: Any) -> FailureTrace:
     """Map a valid Extropy execution-evidence failure into a FailureTrace."""
     data = validate_extropy_failure(record)
     failure_type = data["failure_type"]
-    source = "extropy-failure/v1"
+    source = f"extropy-failure/v{data['schema_version']}"
     reason = f"Extropy post-write evidence rejected execution: {failure_type}"
     rule_name = f"extropy:entropy-delta:{failure_type}"
 
@@ -176,7 +255,11 @@ def build_extropy_regression_artifact(record: Any) -> dict[str, Any]:
     data = validate_extropy_failure(record)
     case = compile_extropy_failure(data)
     unsigned = {
-        "schema_version": EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION,
+        "schema_version": (
+            EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION_V2
+            if data["schema_version"] == EXTROPY_FAILURE_SCHEMA_VERSION_V2
+            else EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION
+        ),
         "kind": EXTROPY_REGRESSION_ARTIFACT_KIND,
         "replay_kind": EXTROPY_REGRESSION_REPLAY_KIND,
         "failure_id": data["failure_id"],
@@ -186,6 +269,14 @@ def build_extropy_regression_artifact(record: Any) -> dict[str, Any]:
         "execution_report_sha256": data["execution_report_sha256"],
         "entropy_delta_sha256": data["entropy_delta_sha256"],
         "source_revision": data["source_revision"],
+        **(
+            {
+                "input_sha256": data["input_sha256"],
+                "change_policy_sha256": data["change_policy_sha256"],
+            }
+            if data["schema_version"] == EXTROPY_FAILURE_SCHEMA_VERSION_V2
+            else {}
+        ),
     }
     return {
         **unsigned,
@@ -207,8 +298,12 @@ EXTROPY_REGRESSION_ARTIFACT_REQUIRED_KEYS = {
     "artifact_id",
 }
 
+EXTROPY_REGRESSION_ARTIFACT_V2_REQUIRED_KEYS = (
+    EXTROPY_REGRESSION_ARTIFACT_REQUIRED_KEYS | {"input_sha256", "change_policy_sha256"}
+)
 
-def validate_extropy_regression_artifact(record: Any) -> dict[str, Any]:
+
+def _validate_extropy_regression_artifact_v1(record: Any) -> dict[str, Any]:
     """Strictly validate one extropy-regression-artifact/v1 envelope."""
     if (
         not isinstance(record, dict)
@@ -264,3 +359,77 @@ def validate_extropy_regression_artifact(record: Any) -> dict[str, Any]:
     if supplied != _sha256_json(unsigned):
         raise ExtropyFailureImportError("extropy regression artifact digest mismatch")
     return record
+
+
+def _validate_extropy_regression_artifact_v2(record: Any) -> dict[str, Any]:
+    """Strictly validate replay-vector-bound extropy-regression-artifact/v2."""
+    if (
+        not isinstance(record, dict)
+        or set(record) != EXTROPY_REGRESSION_ARTIFACT_V2_REQUIRED_KEYS
+    ):
+        raise ExtropyFailureImportError("extropy regression artifact v2 keys mismatch")
+    if record["schema_version"] != EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION_V2:
+        raise ExtropyFailureImportError(
+            "unsupported extropy regression artifact v2 schema_version"
+        )
+    if record["kind"] != EXTROPY_REGRESSION_ARTIFACT_KIND:
+        raise ExtropyFailureImportError("invalid extropy regression artifact kind")
+    if record["replay_kind"] != EXTROPY_REGRESSION_REPLAY_KIND:
+        raise ExtropyFailureImportError("invalid extropy regression replay kind")
+    if record["failure_type"] not in EXTROPY_FAILURE_TYPES:
+        raise ExtropyFailureImportError("unsupported extropy failure type")
+
+    for key in ("case_name", "expected_rule"):
+        value = record[key]
+        if (
+            not isinstance(value, str)
+            or not value.strip()
+            or "\n" in value
+            or "\r" in value
+        ):
+            raise ExtropyFailureImportError(f"{key} must be a non-empty single line")
+
+    for key in (
+        "failure_id",
+        "execution_report_sha256",
+        "entropy_delta_sha256",
+        "input_sha256",
+        "change_policy_sha256",
+        "artifact_id",
+    ):
+        if not _is_lower_sha256(record[key]):
+            raise ExtropyFailureImportError(f"{key} must be lowercase SHA-256")
+
+    revision = record["source_revision"]
+    if (
+        not isinstance(revision, str)
+        or len(revision) not in (40, 64)
+        or any(ch not in "0123456789abcdef" for ch in revision)
+    ):
+        raise ExtropyFailureImportError(
+            "source_revision must be a lowercase Git object id"
+        )
+
+    expected_rule = f"extropy:entropy-delta:{record['failure_type']}"
+    if record["expected_rule"] != expected_rule:
+        raise ExtropyFailureImportError("expected_rule does not match failure_type")
+
+    unsigned = dict(record)
+    supplied = unsigned.pop("artifact_id")
+    if supplied != _sha256_json(unsigned):
+        raise ExtropyFailureImportError("extropy regression artifact digest mismatch")
+    return record
+
+
+def validate_extropy_regression_artifact(record: Any) -> dict[str, Any]:
+    """Validate strict extropy-regression-artifact/v1 or replay-vector-bound v2."""
+    if not isinstance(record, dict):
+        raise ExtropyFailureImportError("extropy regression artifact must be an object")
+    version = record.get("schema_version")
+    if version == EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION:
+        return _validate_extropy_regression_artifact_v1(record)
+    if version == EXTROPY_REGRESSION_ARTIFACT_SCHEMA_VERSION_V2:
+        return _validate_extropy_regression_artifact_v2(record)
+    raise ExtropyFailureImportError(
+        "unsupported extropy regression artifact schema_version"
+    )
