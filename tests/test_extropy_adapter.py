@@ -48,7 +48,9 @@ def test_import_extropy_failure_preserves_public_safe_boundary():
 def test_compile_extropy_failure_produces_stable_regression_case():
     case = compile_extropy_failure(make_record())
     assert case.expected_rule == "extropy:entropy-delta:SCOPE_DRIFT"
-    assert case.failure_reason == "Extropy post-write evidence rejected execution: SCOPE_DRIFT"
+    assert case.failure_reason == (
+        "Extropy post-write evidence rejected execution: SCOPE_DRIFT"
+    )
     assert case.category == "unknown"
     assert case.name.startswith("regression_extropy_rejected_post_write_scope")
 
@@ -59,7 +61,9 @@ def test_compile_extropy_failure_produces_stable_regression_case():
 )
 def test_import_accepts_supported_entropy_failure_types(failure_type):
     trace = import_extropy_failure(make_record(failure_type=failure_type))
-    assert trace.verification_result.rule_name == f"extropy:entropy-delta:{failure_type}"
+    assert trace.verification_result.rule_name == (
+        f"extropy:entropy-delta:{failure_type}"
+    )
 
 
 def test_import_rejects_digest_tampering():
