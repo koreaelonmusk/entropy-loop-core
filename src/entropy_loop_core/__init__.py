@@ -45,6 +45,12 @@ from .contract import (
     write_stability_contract_json,
 )
 from .evaluation import summarize
+from .extropy_adapter import (
+    ExtropyFailureImportError,
+    compile_extropy_failure,
+    import_extropy_failure,
+    validate_extropy_failure,
+)
 from .html_report import (
     export_regression_triage_html,
     write_regression_triage_html,
@@ -143,6 +149,7 @@ __all__ = [
     "CompactionResult",
     "EntropyLoop",
     "EvaluationSummary",
+    "ExtropyFailureImportError",
     "FailureCategory",
     "FailureTrace",
     "Jev0FailureImportError",
@@ -194,8 +201,10 @@ __all__ = [
     "export_regression_triage_markdown",
     "export_stability_contract",
     "export_stability_contract_json",
+    "compile_extropy_failure",
     "compile_jev0_failure",
     "generate_regression_case",
+    "import_extropy_failure",
     "import_jev0_failure",
     "import_lesson_memory",
     "import_memory_policy",
@@ -208,6 +217,7 @@ __all__ = [
     "save_regression_pack",
     "save_regression_suite",
     "summarize",
+    "validate_extropy_failure",
     "validate_jev0_failure",
     "write_json_report",
     "write_junit_report",
