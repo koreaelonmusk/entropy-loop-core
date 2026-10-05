@@ -97,9 +97,7 @@ def validate_extropy_failure(record: Any) -> dict[str, Any]:
         )
 
     if record["raw_diff_captured"] is not False:
-        raise ExtropyFailureImportError(
-            "extropy-failure/v1 must not contain raw diff"
-        )
+        raise ExtropyFailureImportError("extropy-failure/v1 must not contain raw diff")
 
     supplied = record["failure_id"]
     if not _is_lower_sha256(supplied):
