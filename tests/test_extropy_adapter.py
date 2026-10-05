@@ -7,6 +7,7 @@ from entropy_loop_core import (
     build_extropy_regression_artifact,
     compile_extropy_failure,
     import_extropy_failure,
+    validate_extropy_failure,
     validate_extropy_regression_artifact,
 )
 from entropy_loop_core.extropy_adapter import ExtropyFailureImportError
