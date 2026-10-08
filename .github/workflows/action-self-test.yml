@@ -15,8 +15,14 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded checks for the same PR or branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   local-action-self-test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -108,6 +114,7 @@ jobs:
           grep -q "regression triage" /tmp/self-test-step-summary.md
 
   cli-policy-self-test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -163,6 +170,7 @@ jobs:
           set -e
 
   published-action-smoke:
+    timeout-minutes: 30
     # Tests the already-released Action as a consumer would use it. Skipped on
     # pull_request to avoid fork/PyPI flakiness; runs on push to main and manual
     # dispatch.

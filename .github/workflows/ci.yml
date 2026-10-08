@@ -4,8 +4,14 @@ on:
   push:
   pull_request:
 
+# Cancel superseded checks for the same PR or branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -45,6 +51,7 @@ jobs:
         run: python -c "import entropy_loop_core; print(entropy_loop_core.__version__)"
 
   package:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
